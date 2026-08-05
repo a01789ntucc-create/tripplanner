@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>旅遊行程共同規劃與圖像化 Web UI</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Stripes effect for tentative activities */
+        .bg-tentative {
+            background-image: repeating-linear-gradient(
+                45deg,
+                rgba(255, 255, 255, 0.4),
+                rgba(255, 255, 255, 0.4) 10px,
+                transparent 10px,
+                transparent 20px
+            );
+        }
+        /* Custom scrollbar for horizontal timeline */
+        .timeline-scroll::-webkit-scrollbar {
+            height: 8px;
+        }
+        .timeline-scroll::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .timeline-scroll::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans">
+
+    <!-- Header / Navbar -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- App Title & Project Selector -->
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2 text-indigo-600 font-bold text-xl">
+                        <i data-lucide="map-pin" class="w-6 h-6"></i>
+                        <span class="hidden sm:inline">TripPlanner</span>
+                    </div>
+                    
+                    <div class="h-6 w-px bg-slate-300"></div>
+
+                    <!-- Project Dropdown, New Button & Delete Button -->
+                    <div class="flex items-center space-x-2">
+                        <select id="project-select" class="bg-slate-100 hover:bg-slate-200 text-slate-800 text-sm font-semibold py-1.5 px-3 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <!-- Populated dynamically -->
+                        </select>
+                        <button onclick="openModal('new-project-modal')" class="inline-flex items-center justify-center p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="新增專案">
+                            <i data-lucide="plus-circle" class="w-5 h-5"></i>
+                        </button>
+                        <button onclick="handleDeleteCurrentProject()" class="inline-flex items-center justify-center p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="刪除當前專案">
+                            <i data-lucide="trash-2" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Navigation Tabs -->
+                <nav class="flex space-x-1 sm:space-x-4">
+                    <button onclick="switchTab('timeline')" id="tab-btn-timeline" class="tab-btn flex items-center space-x-1.5 px-3 py-2 rounded-md text-sm font-medium text-indigo-600 bg-indigo-50">
+                        <i data-lucide="calendar" class="w-4 h-4"></i>
+                        <span>時程圖</span>
+                    </button>
+                    <button onclick="switchTab('activities')" id="tab-btn-activities" class="tab-btn flex items-center space-x-1.5 px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+                        <i data-lucide="list-todo" class="w-4 h-4"></i>
+                        <span>活動清單</span>
+                    </button>
+                    <button onclick="switchTab('personnel')" id="tab-btn-personnel" class="tab-btn flex items-center space-x-1.5 px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+                        <i data-lucide="users" class="w-4 h-4"></i>
+                        <span>人員清單</span>
+                    </button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+        
+        <!-- Project Info Banner -->
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6 flex flex-wrap items-center justify-between gap-4">
+            <div>
+                <h1 id="current-project-title" class="text-xl font-bold text-slate-900">載入中...</h1>
+                <p id="current-project-dates" class="text-sm text-slate-500 flex items-center mt-0.5">
+                    <i data-lucide="calendar-days" class="w-4 h-4 mr-1"></i> -
+                </p>
+            </div>
+            <div id="current-project-members" class="flex items-center -space-x-2 overflow-hidden">
+                <!-- Member avatars -->
+            </div>
+        </div>
+
+        <!-- Tab 1: 時程圖 (Timeline View) -->
+        <section id="tab-timeline" class="tab-content space-y-4">
+            <!-- Filter Options -->
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between flex-wrap gap-3">
+                <div class="flex items-center space-x-2">
+                    <span class="text-sm font-medium text-slate-700 flex items-center">
+                        <i data-lucide="filter" class="w-4 h-4 mr-1 text-slate-500"></i>日期篩選：
+                    </span>
+                    <div id="timeline-date-filters" class="flex flex-wrap gap-1.5">
+                        <!-- Date pills populated dynamically -->
+                    </div>
+                </div>
+                <div class="text-xs text-slate-500 flex items-center space-x-3">
+                    <span class="flex items-center"><span class="w-3 h-3 rounded bg-indigo-500 inline-block mr-1"></span>確定行程</span>
+                    <span class="flex items-center"><span class="w-3 h-3 rounded bg-indigo-500 bg-tentative border border-indigo-400 inline-block mr-1"></span>擬訂行程</span>
+                </div>
+            </div>
+
+            <!-- Dynamic Timeline Grid Container -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="overflow-x-auto timeline-scroll">
+                    <div id="timeline-grid" class="min-w-[700px]">
+                        <!-- Timeline generated by JS -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tab 2: 活動清單 (Activity Table View) -->
+        <section id="tab-activities" class="tab-content hidden space-y-4">
+            <div class="flex justify-between items-center">
+                <h2 class="text-lg font-bold text-slate-800">活動資料表</h2>
+                <button onclick="openActivityModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg flex items-center shadow-sm transition-colors">
+                    <i data-lucide="plus" class="w-4 h-4 mr-1"></i>新增活動
+                </button>
+            </div>
+
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold">
+                            <th class="p-3.5">活動名稱</th>
+                            <th class="p-3.5">參與人員</th>
+                            <th class="p-3.5">開始時間</th>
+                            <th class="p-3.5">結束時間</th>
+                            <th class="p-3.5">集合地點</th>
+                            <th class="p-3.5">聯絡資料</th>
+                            <th class="p-3.5 text-center">擬訂</th>
+                            <th class="p-3.5 text-center">顏色</th>
+                            <th class="p-3.5 text-right">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="activities-table-body" class="divide-y divide-slate-100">
+                        <!-- Populated dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Tab 3: 人員清單 (Personnel List View) -->
+        <section id="tab-personnel" class="tab-content hidden space-y-4">
+            <div class="flex justify-between items-center">
+                <h2 class="text-lg font-bold text-slate-800">人員成員管理</h2>
+                <button onclick="openModal('add-person-modal')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg flex items-center shadow-sm transition-colors">
+                    <i data-lucide="user-plus" class="w-4 h-4 mr-1"></i>新增成員
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="personnel-list-container">
+                <!-- Populated dynamically -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal: New Project -->
+    <div id="new-project-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="text-lg font-bold text-slate-900">新增旅遊專案</h3>
+                <button onclick="closeModal('new-project-modal')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form id="new-project-form" onsubmit="handleCreateProject(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">專案名稱</label>
+                    <input type="text" id="project-name-input" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="例：東京 5 天 4 夜自由行">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">起始日期</label>
+                        <input type="date" id="project-start-input" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">終止日期</label>
+                        <input type="date" id="project-end-input" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">初始參與人員 (用逗號分隔)</label>
+                    <input type="text" id="project-members-input" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Alice, Bob, Charlie">
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="closeModal('new-project-modal')" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg">取消</button>
+                    <button type="submit" class="px-4 py-2 text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg">建立專案</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Add/Edit Activity -->
+    <div id="activity-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 id="activity-modal-title" class="text-lg font-bold text-slate-900">新增活動</h3>
+                <button onclick="closeModal('activity-modal')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form id="activity-form" onsubmit="handleSaveActivity(event)" class="space-y-4">
+                <input type="hidden" id="act-id">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">活動名稱</label>
+                    <input type="text" id="act-name" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="例：淺草寺參觀">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">開始時間</label>
+                        <input type="datetime-local" id="act-start" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">結束時間</label>
+                        <input type="datetime-local" id="act-end" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">參與人員 (可多選)</label>
+                    <div id="act-participants-checkboxes" class="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto p-2 border border-slate-200 rounded-lg">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">集合地點</label>
+                        <input type="text" id="act-location" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="例：雷門前">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">聯絡資料</label>
+                        <input type="text" id="act-contact" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="例：090-1234-5678">
+                    </div>
+                </div>
+                <div class="flex items-center justify-between pt-2">
+                    <div class="flex items-center space-x-2">
+                        <input type="checkbox" id="act-tentative" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
+                        <label for="act-tentative" class="text-sm font-medium text-slate-700">標記為擬訂行程</label>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <label class="text-sm font-medium text-slate-700">顯示顏色</label>
+                        <input type="color" id="act-color" value="#3b82f6" class="w-8 h-8 rounded border-0 cursor-pointer">
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-2 pt-4 border-t border-slate-100">
+                    <button type="button" onclick="closeModal('activity-modal')" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg">取消</button>
+                    <button type="submit" class="px-4 py-2 text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg">儲存活動</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: View Activity Detail -->
+    <div id="activity-detail-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 space-y-4">
+            <div class="flex justify-between items-start border-b border-slate-100 pb-3">
+                <div>
+                    <span id="detail-tentative-tag" class="hidden text-xs font-semibold px-2 py-0.5 rounded bg-amber-100 text-amber-800 mb-1 inline-block">擬訂中</span>
+                    <h3 id="detail-title" class="text-xl font-bold text-slate-900"></h3>
+                </div>
+                <button onclick="closeModal('activity-detail-modal')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            
+            <div class="space-y-3 text-sm">
+                <div class="flex items-start text-slate-600">
+                    <i data-lucide="clock" class="w-4 h-4 mr-2.5 mt-0.5 text-slate-400"></i>
+                    <div>
+                        <div class="font-medium text-slate-800">時間</div>
+                        <div id="detail-time" class="text-slate-600"></div>
+                    </div>
+                </div>
+
+                <div class="flex items-start text-slate-600">
+                    <i data-lucide="map-pin" class="w-4 h-4 mr-2.5 mt-0.5 text-slate-400"></i>
+                    <div>
+                        <div class="font-medium text-slate-800">集合地點</div>
+                        <div id="detail-location"></div>
+                    </div>
+                </div>
+
+                <div class="flex items-start text-slate-600">
+                    <i data-lucide="phone" class="w-4 h-4 mr-2.5 mt-0.5 text-slate-400"></i>
+                    <div>
+                        <div class="font-medium text-slate-800">聯絡資料</div>
+                        <div id="detail-contact" class="text-slate-600"></div>
+                    </div>
+                </div>
+
+                <div class="flex items-start text-slate-600">
+                    <i data-lucide="users" class="w-4 h-4 mr-2.5 mt-0.5 text-slate-400"></i>
+                    <div>
+                        <div class="font-medium text-slate-800 mb-1">參與人員</div>
+                        <div id="detail-participants" class="flex flex-wrap gap-1.5"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-2 pt-4 border-t border-slate-100">
+                <button id="detail-edit-btn" class="px-4 py-2 text-sm font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg flex items-center">
+                    <i data-lucide="edit-2" class="w-4 h-4 mr-1"></i>編輯
+                </button>
+                <button onclick="closeModal('activity-detail-modal')" class="px-4 py-2 text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg">關閉</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Add Person -->
+    <div id="add-person-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="text-lg font-bold text-slate-900">新增成員</h3>
+                <button onclick="closeModal('add-person-modal')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form onsubmit="handleAddPerson(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">成員姓名</label>
+                    <input type="text" id="person-name-input" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="例：David">
+                </div>
+                <div class="flex items-center justify-between">
+                    <label class="text-sm font-medium text-slate-700">代表顏色</label>
+                    <input type="color" id="person-color-input" value="#10b981" class="w-8 h-8 rounded border-0 cursor-pointer">
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="closeModal('add-person-modal')" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg">取消</button>
+                    <button type="submit" class="px-4 py-2 text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg">新增</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // Data Store
+        let appData = {
+            projects: [
+                {
+                    id: "p1",
+                    name: "東京 5 天 4 夜自由行",
+                    startDate: "2026-09-10",
+                    endDate: "2026-09-14",
+                    personnel: [
+                        { id: "u1", name: "Alice", color: "#ef4444" },
+                        { id: "u2", name: "Bob", color: "#3b82f6" },
+                        { id: "u3", name: "Charlie", color: "#10b981" },
+                        { id: "u4", name: "Diana", color: "#f59e0b" }
+                    ],
+                    activities: [
+                        {
+                            id: "a1",
+                            name: "抵達特快 N'EX 抵達東京",
+                            participants: ["u1", "u2", "u3", "u4"],
+                            start: "2026-09-10T09:00",
+                            end: "2026-09-10T11:30",
+                            location: "成田機場 第一航廈",
+                            contact: "JR 服務中心 +81 50-2016-1600",
+                            isTentative: false,
+                            color: "#3b82f6"
+                        },
+                        {
+                            id: "a2",
+                            name: "飯店 Check-in & 寄放行李",
+                            participants: ["u1", "u2"],
+                            start: "2026-09-10T12:30",
+                            end: "2026-09-10T13:30",
+                            location: "新宿格拉斯麗飯店",
+                            contact: "櫃檯 +81 3-6833-1111",
+                            isTentative: false,
+                            color: "#6366f1"
+                        },
+                        {
+                            id: "a2_b",
+                            name: "秋葉原動漫巡禮 (B組)",
+                            participants: ["u3", "u4"],
+                            start: "2026-09-10T12:30",
+                            end: "2026-09-10T15:00",
+                            location: "秋葉原站",
+                            contact: "",
+                            isTentative: false,
+                            color: "#ec4899"
+                        },
+                        {
+                            id: "a3",
+                            name: "淺草寺參觀與周邊美食",
+                            participants: ["u1", "u2", "u3", "u4"],
+                            start: "2026-09-10T15:30",
+                            end: "2026-09-10T17:30",
+                            location: "淺草寺 雷門",
+                            contact: "",
+                            isTentative: false,
+                            color: "#f59e0b"
+                        },
+                        {
+                            id: "a4",
+                            name: "晴空塔夜景觀賞",
+                            participants: ["u3", "u4"],
+                            start: "2026-09-10T18:30",
+                            end: "2026-09-10T21:00",
+                            location: "東京晴空塔",
+                            contact: "客服 +81 570-55-0634",
+                            isTentative: true,
+                            color: "#8b5cf6"
+                        },
+                        {
+                            id: "a4_b",
+                            name: "澀谷 Sky & 購物",
+                            participants: ["u1", "u2"],
+                            start: "2026-09-10T18:00",
+                            end: "2026-09-10T21:00",
+                            location: "澀谷 Scramble Square",
+                            contact: "",
+                            isTentative: false,
+                            color: "#06b6d4"
+                        },
+                        {
+                            id: "a5",
+                            name: "東京迪士尼樂園全日遊",
+                            participants: ["u1", "u2", "u3", "u4"],
+                            start: "2026-09-11T08:00",
+                            end: "2026-09-11T20:00",
+                            location: "東京迪士尼樂園大門",
+                            contact: "",
+                            isTentative: false,
+                            color: "#10b981"
+                        }
+                    ]
+                }
+            ],
+            currentProjectId: "p1",
+            timelineSelectedDate: "ALL"
+        };
+
+        // Initialize App
+        document.addEventListener("DOMContentLoaded", () => {
+            loadFromLocalStorage();
+            renderProjectSelector();
+            loadProject(appData.currentProjectId);
+            lucide.createIcons();
+        });
+
+        // Save & Load LocalStorage
+        function saveData() {
+            localStorage.setItem("trip_planner_data", JSON.stringify(appData));
+        }
+
+        function loadFromLocalStorage() {
+            const saved = localStorage.getItem("trip_planner_data");
+            if (saved) {
+                try {
+                    appData = JSON.parse(saved);
+                } catch (e) {
+                    console.error("Failed to parse localStorage data", e);
+                }
+            }
+        }
+
+        // Tab Switching Logic
+        function switchTab(tabName) {
+            document.querySelectorAll(".tab-content").forEach(el => el.classList.add("hidden"));
+            document.querySelectorAll(".tab-btn").forEach(el => {
+                el.classList.remove("text-indigo-600", "bg-indigo-50");
+                el.classList.add("text-slate-600", "hover:text-slate-900", "hover:bg-slate-100");
+            });
+
+            const activeTab = document.getElementById(`tab-${tabName}`);
+            const activeBtn = document.getElementById(`tab-btn-${tabName}`);
+            
+            if (activeTab) activeTab.classList.remove("hidden");
+            if (activeBtn) {
+                activeBtn.classList.remove("text-slate-600", "hover:text-slate-900", "hover:bg-slate-100");
+                activeBtn.classList.add("text-indigo-600", "bg-indigo-50");
+            }
+
+            if (tabName === "timeline") renderTimeline();
+            if (tabName === "activities") renderActivitiesTable();
+            if (tabName === "personnel") renderPersonnelList();
+        }
+
+        // Project Management
+        function getCurrentProject() {
+            return appData.projects.find(p => p.id === appData.currentProjectId) || appData.projects[0];
+        }
+
+        function renderProjectSelector() {
+            const select = document.getElementById("project-select");
+            select.innerHTML = appData.projects.map(p => 
+                `<option value="${p.id}" ${p.id === appData.currentProjectId ? "selected" : ""}>${p.name}</option>`
+            ).join("");
+
+            select.onchange = (e) => {
+                appData.currentProjectId = e.target.value;
+                appData.timelineSelectedDate = "ALL";
+                saveData();
+                loadProject(appData.currentProjectId);
+            };
+        }
+
+        function loadProject(projectId) {
+            const project = getCurrentProject();
+            if (!project) return;
+            document.getElementById("current-project-title").innerText = project.name;
+            document.getElementById("current-project-dates").innerHTML = `<i data-lucide="calendar-days" class="w-4 h-4 mr-1"></i> ${project.startDate} 至 ${project.endDate}`;
+            
+            // Header Members Avatars
+            const membersContainer = document.getElementById("current-project-members");
+            membersContainer.innerHTML = project.personnel.map(m => 
+                `<div class="inline-flex items-center justify-center w-7 h-7 rounded-full text-white font-bold text-xs ring-2 ring-white" style="background-color: ${m.color}" title="${m.name}">${m.name.charAt(0).toUpperCase()}</div>`
+            ).join("");
+
+            renderTimeline();
+            renderActivitiesTable();
+            renderPersonnelList();
+            lucide.createIcons();
+        }
+
+        function handleCreateProject(e) {
+            e.preventDefault();
+            const name = document.getElementById("project-name-input").value;
+            const startDate = document.getElementById("project-start-input").value;
+            const endDate = document.getElementById("project-end-input").value;
+            const rawMembers = document.getElementById("project-members-input").value;
+
+            const memberNames = rawMembers ? rawMembers.split(",").map(s => s.trim()).filter(Boolean) : ["Alice", "Bob"];
+            const colors = ["#ef4444", "#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899"];
+
+            const personnel = memberNames.map((mName, idx) => ({
+                id: "u_" + Date.now() + "_" + idx,
+                name: mName,
+                color: colors[idx % colors.length]
+            }));
+
+            const newProj = {
+                id: "p_" + Date.now(),
+                name,
+                startDate,
+                endDate,
+                personnel,
+                activities: []
+            };
+
+            appData.projects.push(newProj);
+            appData.currentProjectId = newProj.id;
+            appData.timelineSelectedDate = "ALL";
+            saveData();
+
+            renderProjectSelector();
+            loadProject(newProj.id);
+            closeModal("new-project-modal");
+            document.getElementById("new-project-form").reset();
+        }
+
+        function handleDeleteCurrentProject() {
+            if (appData.projects.length <= 1) {
+                alert("至少需要保留一個旅遊專案！");
+                return;
+            }
+
+            const currentProj = getCurrentProject();
+            if (!confirm(`確定要刪除專案「${currentProj.name}」嗎？此操作無法復原。`)) return;
+
+            appData.projects = appData.projects.filter(p => p.id !== currentProj.id);
+            appData.currentProjectId = appData.projects[0].id;
+            appData.timelineSelectedDate = "ALL";
+
+            saveData();
+            renderProjectSelector();
+            loadProject(appData.currentProjectId);
+        }
+
+        // Tab 1: Timeline Rendering with Side-by-Side Overlap Support
+        function renderTimeline() {
+            const project = getCurrentProject();
+            if (!project) return;
+            const filtersContainer = document.getElementById("timeline-date-filters");
+            
+            // Get dates list between start and end
+            const dates = [];
+            let curr = new Date(project.startDate);
+            const stop = new Date(project.endDate);
+            while (curr <= stop) {
+                dates.push(curr.toISOString().split("T")[0]);
+                curr.setDate(curr.getDate() + 1);
+            }
+
+            // Render Date Filter Pills
+            let filterHtml = `<button onclick="setTimelineDate('ALL')" class="px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${appData.timelineSelectedDate === 'ALL' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">顯示全部 (${dates.length}天)</button>`;
+            dates.forEach(d => {
+                const isSelected = appData.timelineSelectedDate === d;
+                filterHtml += `<button onclick="setTimelineDate('${d}')" class="px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${isSelected ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">${d.substring(5)}</button>`;
+            });
+            filtersContainer.innerHTML = filterHtml;
+
+            // Filter activities based on selected date
+            const displayDates = appData.timelineSelectedDate === "ALL" ? dates : [appData.timelineSelectedDate];
+            const filteredActivities = project.activities.filter(a => {
+                const actDate = a.start.split("T")[0];
+                return displayDates.includes(actDate);
+            });
+
+            // Calculate Start / End hours dynamically
+            let minHour = 8;
+            let maxHour = 20;
+
+            if (filteredActivities.length > 0) {
+                let earliest = 24;
+                let latest = 0;
+                filteredActivities.forEach(a => {
+                    const startH = new Date(a.start).getHours();
+                    const endH = new Date(a.end).getHours() + (new Date(a.end).getMinutes() > 0 ? 1 : 0);
+                    if (startH < earliest) earliest = startH;
+                    if (endH > latest) latest = endH;
+                });
+                minHour = Math.max(0, Math.min(minHour, earliest));
+                maxHour = Math.min(24, Math.max(maxHour, latest));
+            }
+
+            const gridContainer = document.getElementById("timeline-grid");
+            
+            // Build Table Header
+            let gridHtml = `<div class="grid" style="grid-template-columns: 80px repeat(${displayDates.length}, minmax(180px, 1fr));">`;
+            gridHtml += `<div class="p-3 bg-slate-50 border-b border-r border-slate-200 text-xs font-semibold text-slate-500 text-center sticky left-0 z-10">時間</div>`;
+            displayDates.forEach(d => {
+                gridHtml += `<div class="p-3 bg-slate-50 border-b border-r border-slate-200 text-xs font-bold text-slate-700 text-center">${d}</div>`;
+            });
+
+            // Build Hour Rows
+            for (let h = minHour; h < maxHour; h++) {
+                const hourLabel = `${String(h).padStart(2, '0')}:00`;
+                gridHtml += `<div class="h-16 p-1 border-b border-r border-slate-100 text-[11px] font-mono text-slate-400 text-center relative bg-slate-50/50 sticky left-0 z-10 flex items-center justify-center">${hourLabel}</div>`;
+                
+                displayDates.forEach(d => {
+                    gridHtml += `<div class="h-16 border-b border-r border-slate-100 relative bg-white" id="cell-${d}-${h}"></div>`;
+                });
+            }
+            gridHtml += `</div>`;
+            gridContainer.innerHTML = gridHtml;
+
+            // Process activities per date for side-by-side positioning
+            displayDates.forEach(d => {
+                const dayActs = filteredActivities.filter(a => a.start.split("T")[0] === d)
+                    .map(a => {
+                        const startDt = new Date(a.start);
+                        const endDt = new Date(a.end);
+                        return {
+                            ...a,
+                            startH: startDt.getHours() + startDt.getMinutes() / 60,
+                            endH: endDt.getHours() + endDt.getMinutes() / 60
+                        };
+                    })
+                    .filter(a => a.endH > minHour && a.startH < maxHour)
+                    .sort((a, b) => a.startH - b.startH || (b.endH - b.startH) - (a.endH - a.startH));
+
+                if (dayActs.length === 0) return;
+
+                // Group overlapping activities into clusters and compute column layouts
+                let clusters = [];
+                let currentCluster = [];
+                let clusterEnd = -1;
+
+                dayActs.forEach(act => {
+                    if (currentCluster.length === 0 || act.startH < clusterEnd) {
+                        currentCluster.push(act);
+                        if (act.endH > clusterEnd) clusterEnd = act.endH;
+                    } else {
+                        clusters.push(currentCluster);
+                        currentCluster = [act];
+                        clusterEnd = act.endH;
+                    }
+                });
+                if (currentCluster.length > 0) {
+                    clusters.push(currentCluster);
+                }
+
+                // Assign column indices and column span counts for each cluster
+                clusters.forEach(cluster => {
+                    let tracks = []; // Stores end time of last event in each track
+
+                    cluster.forEach(act => {
+                        let assignedTrack = -1;
+                        for (let t = 0; t < tracks.length; t++) {
+                            if (tracks[t] <= act.startH) {
+                                assignedTrack = t;
+                                tracks[t] = act.endH;
+                                break;
+                            }
+                        }
+                        if (assignedTrack === -1) {
+                            assignedTrack = tracks.length;
+                            tracks.push(act.endH);
+                        }
+                        act.trackIndex = assignedTrack;
+                    });
+
+                    const totalTracks = tracks.length;
+
+                    cluster.forEach(act => {
+                        const startCellIndex = Math.floor(act.startH);
+                        const cell = document.getElementById(`cell-${d}-${startCellIndex}`);
+                        if (!cell) return;
+
+                        const topOffset = (act.startH - minHour) * 64; // 64px per hour
+                        const height = Math.max((act.endH - act.startH) * 64, 28); // minimum height
+
+                        // Calculate width and horizontal placement for side-by-side alignment
+                        const widthPct = 100 / totalTracks;
+                        const leftPct = act.trackIndex * widthPct;
+
+                        const block = document.createElement("div");
+                        block.className = `absolute rounded-lg p-2 text-white shadow-sm cursor-pointer transition-all hover:scale-[1.02] hover:z-30 hover:shadow-md z-20 overflow-hidden flex flex-col justify-between ${act.isTentative ? 'bg-tentative border border-white/40' : ''}`;
+                        block.style.top = `${(act.startH - startCellIndex) * 64}px`;
+                        block.style.height = `${height}px`;
+                        block.style.left = `calc(${leftPct}% + 2px)`;
+                        block.style.width = `calc(${widthPct}% - 4px)`;
+                        block.style.backgroundColor = act.color || "#3b82f6";
+                        block.onclick = (e) => {
+                            e.stopPropagation();
+                            openActivityDetailModal(act.id);
+                        };
+
+                        // Participants dots
+                        const partDots = act.participants.map(pid => {
+                            const person = project.personnel.find(p => p.id === pid);
+                            if (!person) return '';
+                            return `<span class="inline-flex items-center justify-center w-4 h-4 rounded-full text-[9px] font-bold text-white ring-1 ring-white/50" style="background-color:${person.color}">${person.name.charAt(0).toUpperCase()}</span>`;
+                        }).join("");
+
+                        block.innerHTML = `
+                            <div>
+                                <div class="font-bold text-xs truncate leading-tight">${act.name}</div>
+                                <div class="text-[10px] opacity-90 font-mono">${act.start.substring(11,16)} - ${act.end.substring(11,16)}</div>
+                            </div>
+                            <div class="flex items-center space-x-0.5 mt-1">
+                                ${partDots}
+                            </div>
+                        `;
+                        cell.appendChild(block);
+                    });
+                });
+            });
+        }
+
+        function setTimelineDate(dateStr) {
+            appData.timelineSelectedDate = dateStr;
+            renderTimeline();
+        }
+
+        // Tab 2: Activity Table Logic
+        function renderActivitiesTable() {
+            const project = getCurrentProject();
+            const tbody = document.getElementById("activities-table-body");
+            if (!project) return;
+
+            if (project.activities.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-400">目前尚無活動資料，點擊上方按鈕新增。</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = project.activities.map(act => {
+                const partBadges = act.participants.map(pid => {
+                    const person = project.personnel.find(p => p.id === pid);
+                    if (!person) return '';
+                    return `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium text-white" style="background-color: ${person.color}">${person.name}</span>`;
+                }).join(" ");
+
+                const mapsUrl = act.location ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(act.location)}` : '#';
+
+                return `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="p-3.5 font-semibold text-slate-800">${act.name}</td>
+                        <td class="p-3.5"><div class="flex flex-wrap gap-1">${partBadges}</div></td>
+                        <td class="p-3.5 font-mono text-xs text-slate-600">${act.start.replace("T", " ")}</td>
+                        <td class="p-3.5 font-mono text-xs text-slate-600">${act.end.replace("T", " ")}</td>
+                        <td class="p-3.5">
+                            ${act.location ? `<a href="${mapsUrl}" target="_blank" class="text-indigo-600 hover:text-indigo-800 inline-flex items-center hover:underline"><i data-lucide="map-pin" class="w-3.5 h-3.5 mr-1"></i>${act.location}</a>` : '-'}
+                        </td>
+                        <td class="p-3.5 text-slate-600 text-xs">${act.contact || '-'}</td>
+                        <td class="p-3.5 text-center">
+                            ${act.isTentative ? `<span class="px-2 py-0.5 text-xs bg-amber-100 text-amber-800 rounded-full font-medium">是</span>` : `<span class="text-xs text-slate-400">否</span>`}
+                        </td>
+                        <td class="p-3.5 text-center">
+                            <span class="inline-block w-5 h-5 rounded-full border border-slate-200" style="background-color: ${act.color}"></span>
+                        </td>
+                        <td class="p-3.5 text-right space-x-1">
+                            <button onclick="openActivityModal('${act.id}')" class="p-1 text-slate-500 hover:text-indigo-600"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                            <button onclick="deleteActivity('${act.id}')" class="p-1 text-slate-500 hover:text-red-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        </td>
+                    </tr>
+                `;
+            }).join("");
+
+            lucide.createIcons();
+        }
+
+        function openActivityModal(actId = null) {
+            const project = getCurrentProject();
+            const form = document.getElementById("activity-form");
+            form.reset();
+
+            // Populate Checkboxes for Personnel
+            const container = document.getElementById("act-participants-checkboxes");
+            container.innerHTML = project.personnel.map(p => `
+                <label class="flex items-center space-x-2 text-sm text-slate-700 cursor-pointer">
+                    <input type="checkbox" value="${p.id}" class="act-part-cb rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                    <span class="w-2.5 h-2.5 rounded-full" style="background-color:${p.color}"></span>
+                    <span>${p.name}</span>
+                </label>
+            `).join("");
+
+            if (actId) {
+                const act = project.activities.find(a => a.id === actId);
+                if (act) {
+                    document.getElementById("activity-modal-title").innerText = "編輯活動";
+                    document.getElementById("act-id").value = act.id;
+                    document.getElementById("act-name").value = act.name;
+                    document.getElementById("act-start").value = act.start;
+                    document.getElementById("act-end").value = act.end;
+                    document.getElementById("act-location").value = act.location || "";
+                    document.getElementById("act-contact").value = act.contact || "";
+                    document.getElementById("act-tentative").checked = act.isTentative;
+                    document.getElementById("act-color").value = act.color || "#3b82f6";
+
+                    document.querySelectorAll(".act-part-cb").forEach(cb => {
+                        cb.checked = act.participants.includes(cb.value);
+                    });
+                }
+            } else {
+                document.getElementById("activity-modal-title").innerText = "新增活動";
+                document.getElementById("act-id").value = "";
+                document.getElementById("act-start").value = `${project.startDate}T09:00`;
+                document.getElementById("act-end").value = `${project.startDate}T10:00`;
+            }
+
+            openModal("activity-modal");
+        }
+
+        function handleSaveActivity(e) {
+            e.preventDefault();
+            const project = getCurrentProject();
+            const id = document.getElementById("act-id").value;
+
+            const selectedParticipants = Array.from(document.querySelectorAll(".act-part-cb:checked")).map(cb => cb.value);
+
+            const activityData = {
+                id: id || "a_" + Date.now(),
+                name: document.getElementById("act-name").value,
+                start: document.getElementById("act-start").value,
+                end: document.getElementById("act-end").value,
+                participants: selectedParticipants,
+                location: document.getElementById("act-location").value,
+                contact: document.getElementById("act-contact").value,
+                isTentative: document.getElementById("act-tentative").checked,
+                color: document.getElementById("act-color").value
+            };
+
+            if (id) {
+                const index = project.activities.findIndex(a => a.id === id);
+                if (index !== -1) project.activities[index] = activityData;
+            } else {
+                project.activities.push(activityData);
+            }
+
+            saveData();
+            closeModal("activity-modal");
+            renderTimeline();
+            renderActivitiesTable();
+        }
+
+        function deleteActivity(actId) {
+            if (!confirm("確定要刪除此活動嗎？")) return;
+            const project = getCurrentProject();
+            project.activities = project.activities.filter(a => a.id !== actId);
+            saveData();
+            renderTimeline();
+            renderActivitiesTable();
+        }
+
+        function openActivityDetailModal(actId) {
+            const project = getCurrentProject();
+            const act = project.activities.find(a => a.id === actId);
+            if (!act) return;
+
+            document.getElementById("detail-title").innerText = act.name;
+            document.getElementById("detail-time").innerText = `${act.start.replace("T", " ")} ~ ${act.end.replace("T", " ")}`;
+            
+            const locEl = document.getElementById("detail-location");
+            if (act.location) {
+                locEl.innerHTML = `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(act.location)}" target="_blank" class="text-indigo-600 hover:underline flex items-center">${act.location} <i data-lucide="external-link" class="w-3 h-3 ml-1"></i></a>`;
+            } else {
+                locEl.innerText = "未設定";
+            }
+
+            document.getElementById("detail-contact").innerText = act.contact || "無";
+
+            const tagEl = document.getElementById("detail-tentative-tag");
+            if (act.isTentative) tagEl.classList.remove("hidden");
+            else tagEl.classList.add("hidden");
+
+            const partsEl = document.getElementById("detail-participants");
+            partsEl.innerHTML = act.participants.map(pid => {
+                const p = project.personnel.find(person => person.id === pid);
+                if (!p) return '';
+                return `<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold text-white" style="background-color:${p.color}"><span class="w-1.5 h-1.5 rounded-full bg-white mr-1.5"></span>${p.name}</span>`;
+            }).join("");
+
+            document.getElementById("detail-edit-btn").onclick = () => {
+                closeModal("activity-detail-modal");
+                openActivityModal(act.id);
+            };
+
+            openModal("activity-detail-modal");
+            lucide.createIcons();
+        }
+
+        // Tab 3: Personnel Management
+        function renderPersonnelList() {
+            const project = getCurrentProject();
+            const container = document.getElementById("personnel-list-container");
+            if (!project) return;
+
+            container.innerHTML = project.personnel.map(p => `
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-inner" style="background-color: ${p.color}">
+                            ${p.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                            <div class="font-bold text-slate-800">${p.name}</div>
+                            <div class="text-xs text-slate-400 font-mono">ID: ${p.id}</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <input type="color" value="${p.color}" onchange="updatePersonColor('${p.id}', this.value)" class="w-8 h-8 rounded border-0 cursor-pointer" title="更換代表色">
+                        <button onclick="deletePerson('${p.id}')" class="p-1.5 text-slate-400 hover:text-red-600 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </div>
+                </div>
+            `).join("");
+
+            lucide.createIcons();
+        }
+
+        function handleAddPerson(e) {
+            e.preventDefault();
+            const project = getCurrentProject();
+            const name = document.getElementById("person-name-input").value;
+            const color = document.getElementById("person-color-input").value;
+
+            const newPerson = {
+                id: "u_" + Date.now(),
+                name,
+                color
+            };
+
+            project.personnel.push(newPerson);
+            saveData();
+            closeModal("add-person-modal");
+            document.getElementById("person-name-input").value = "";
+
+            loadProject(project.id);
+        }
+
+        function updatePersonColor(personId, newColor) {
+            const project = getCurrentProject();
+            const person = project.personnel.find(p => p.id === personId);
+            if (person) {
+                person.color = newColor;
+                saveData();
+                loadProject(project.id);
+            }
+        }
+
+        function deletePerson(personId) {
+            const project = getCurrentProject();
+            if (project.personnel.length <= 1) {
+                alert("專案至少需要保留一名成員！");
+                return;
+            }
+            if (!confirm("確定刪除此成員？（活動列表中的相應參與標籤也會同步更新）")) return;
+
+            project.personnel = project.personnel.filter(p => p.id !== personId);
+            // Remove person from activities
+            project.activities.forEach(a => {
+                a.participants = a.participants.filter(pid => pid !== personId);
+            });
+
+            saveData();
+            loadProject(project.id);
+        }
+
+        // Helpers
+        function openModal(id) {
+            document.getElementById(id).classList.remove("hidden");
+        }
+        function closeModal(id) {
+            document.getElementById(id).classList.add("hidden");
+        }
+    </script>
+</body>
+</html>
