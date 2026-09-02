@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>旅遊行程共同規劃與圖像化 Web UI</title>
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         .bg-tentative {
@@ -22,9 +20,128 @@
         .timeline-scroll::-webkit-scrollbar-track { background: #f1f5f9; }
         .timeline-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
 
-        /* 同步狀態指示器 */
-        #sync-indicator {
-            transition: opacity 0.5s ease;
+        #sync-indicator { transition: opacity 0.5s ease; }
+
+        /* ── 手機底部導覽列 ── */
+        #mobile-bottom-nav {
+            display: none;
+        }
+        @media (max-width: 767px) {
+            /* 顯示底部導覽列 */
+            #mobile-bottom-nav {
+                display: flex;
+            }
+            /* 主內容留出底部導覽列空間 */
+            main {
+                padding-bottom: 80px !important;
+            }
+            /* Header 隱藏桌面版 Tab */
+            #desktop-tabs {
+                display: none !important;
+            }
+            /* Header 縮小 padding */
+            header .max-w-7xl {
+                padding-left: 12px !important;
+                padding-right: 12px !important;
+            }
+            /* 專案選擇器縮短 */
+            #project-select {
+                max-width: 130px;
+            }
+            /* 同步指示器在手機上縮短文字 */
+            #sync-text {
+                display: none;
+            }
+            /* 活動清單表格：手機改為卡片式 */
+            #activities-table-wrapper table,
+            #activities-table-wrapper thead,
+            #activities-table-wrapper tbody,
+            #activities-table-wrapper th,
+            #activities-table-wrapper td,
+            #activities-table-wrapper tr {
+                display: block;
+            }
+            #activities-table-wrapper thead {
+                display: none;
+            }
+            #activities-table-wrapper tbody tr {
+                background: #fff;
+                border: 1px solid #e2e8f0;
+                border-radius: 12px;
+                margin-bottom: 12px;
+                padding: 12px;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            }
+            #activities-table-wrapper tbody td {
+                padding: 4px 0;
+                border: none;
+                font-size: 13px;
+                display: flex;
+                align-items: flex-start;
+                gap: 6px;
+            }
+            #activities-table-wrapper tbody td::before {
+                content: attr(data-label);
+                font-weight: 600;
+                color: #64748b;
+                min-width: 64px;
+                font-size: 11px;
+                padding-top: 2px;
+                flex-shrink: 0;
+            }
+            #activities-table-wrapper tbody td[data-label=""] {
+                justify-content: flex-end;
+                padding-top: 8px;
+                margin-top: 4px;
+                border-top: 1px solid #f1f5f9;
+            }
+            #activities-table-wrapper tbody td[data-label=""]::before {
+                display: none;
+            }
+            /* 人員卡片在手機上單欄 */
+            #personnel-list-container {
+                grid-template-columns: 1fr !important;
+            }
+            /* Modal 在手機上從底部滑入 */
+            .modal-box {
+                position: fixed !important;
+                bottom: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                top: auto !important;
+                border-radius: 20px 20px 0 0 !important;
+                max-width: 100% !important;
+                max-height: 92vh;
+                overflow-y: auto;
+                animation: slideUp 0.25s ease;
+            }
+            .modal-outer {
+                align-items: flex-end !important;
+            }
+            @keyframes slideUp {
+                from { transform: translateY(100%); }
+                to   { transform: translateY(0); }
+            }
+            /* Project Info Banner 手機版 */
+            #project-banner {
+                padding: 12px !important;
+            }
+            #current-project-title {
+                font-size: 16px !important;
+            }
+            /* 時程圖篩選器換行 */
+            #timeline-date-filters {
+                gap: 6px;
+            }
+            /* 載入遮罩文字 */
+            #loading-overlay p {
+                font-size: 14px;
+            }
+        }
+
+        /* 底部導覽列動畫 */
+        #mobile-bottom-nav a {
+            transition: color 0.15s, background 0.15s;
         }
     </style>
 
@@ -32,138 +149,144 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import {
-            getFirestore,
-            doc,
-            getDoc,
-            setDoc,
-            onSnapshot,
-            serverTimestamp
+            getFirestore, doc, getDoc, setDoc, onSnapshot, serverTimestamp
         } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
         // ✏️ 請將下方替換為你的 Firebase 專案設定
         const firebaseConfig = {
-				apiKey: "AIzaSyDDqGA_Sh3oUKDw5v0ZfL-OJWSYIEqkAs0",
-				authDomain: "trip-planner-by-a01789.firebaseapp.com",
-				projectId: "trip-planner-by-a01789",
-				storageBucket: "trip-planner-by-a01789.firebasestorage.app",
-				messagingSenderId: "123576673845",
-				appId: "1:123576673845:web:5a1990fbc831c6c0f0b37c",
-				measurementId: "G-GB14NQN8DF"
-			  };;
+            // Placeholder
+        };
 
         const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+        const db  = getFirestore(app);
 
-        // 掛到 window 供主程式使用
-        window._db = db;
-        window._fsDoc = doc;
-        window._fsGetDoc = getDoc;
-        window._fsSetDoc = setDoc;
-        window._fsOnSnapshot = onSnapshot;
+        window._db               = db;
+        window._fsDoc            = doc;
+        window._fsGetDoc         = getDoc;
+        window._fsSetDoc         = setDoc;
+        window._fsOnSnapshot     = onSnapshot;
         window._fsServerTimestamp = serverTimestamp;
-        window._firebaseReady = true;
+        window._firebaseReady    = true;
 
-        // 通知主程式 Firebase 已就緒
         window.dispatchEvent(new Event("firebase-ready"));
     </script>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans">
 
-    <!-- Header / Navbar -->
+    <!-- ══════════════════════════════════════════
+         Header / Navbar
+    ══════════════════════════════════════════ -->
     <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <div class="flex items-center space-x-4">
-                    <div class="flex items-center space-x-2 text-indigo-600 font-bold text-xl">
-                        <i data-lucide="map-pin" class="w-6 h-6"></i>
+            <div class="flex items-center justify-between h-14 sm:h-16">
+
+                <!-- 左側：Logo + 專案選擇器 -->
+                <div class="flex items-center space-x-2 sm:space-x-4 min-w-0">
+                    <div class="flex items-center space-x-1.5 text-indigo-600 font-bold text-lg sm:text-xl flex-shrink-0">
+                        <i data-lucide="map-pin" class="w-5 h-5 sm:w-6 sm:h-6"></i>
                         <span class="hidden sm:inline">TripPlanner</span>
+                        <span class="sm:hidden text-base">Trip</span>
                     </div>
-                    <div class="h-6 w-px bg-slate-300"></div>
-                    <div class="flex items-center space-x-2">
-                        <select id="project-select" class="bg-slate-100 hover:bg-slate-200 text-slate-800 text-sm font-semibold py-1.5 px-3 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
-                        <button onclick="openModal('new-project-modal')" class="inline-flex items-center justify-center p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="新增專案">
-                            <i data-lucide="plus-circle" class="w-5 h-5"></i>
+
+                    <div class="h-5 w-px bg-slate-300 flex-shrink-0"></div>
+
+                    <div class="flex items-center space-x-1 sm:space-x-2 min-w-0">
+                        <select id="project-select" class="bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs sm:text-sm font-semibold py-1.5 px-2 sm:px-3 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-0 truncate"></select>
+                        <button onclick="openModal('new-project-modal')" class="inline-flex items-center justify-center p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors flex-shrink-0" title="新增專案">
+                            <i data-lucide="plus-circle" class="w-4 h-4 sm:w-5 sm:h-5"></i>
                         </button>
-                        <button onclick="handleDeleteCurrentProject()" class="inline-flex items-center justify-center p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="刪除當前專案">
-                            <i data-lucide="trash-2" class="w-5 h-5"></i>
+                        <button onclick="handleDeleteCurrentProject()" class="inline-flex items-center justify-center p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0" title="刪除當前專案">
+                            <i data-lucide="trash-2" class="w-4 h-4 sm:w-5 sm:h-5"></i>
                         </button>
                     </div>
                 </div>
 
-                <nav class="flex items-center space-x-1 sm:space-x-4">
-                    <!-- 同步狀態指示器 -->
-                    <div id="sync-indicator" class="flex items-center space-x-1.5 text-xs text-slate-400 mr-2">
-                        <span id="sync-dot" class="w-2 h-2 rounded-full bg-slate-300"></span>
-                        <span id="sync-text">連線中...</span>
+                <!-- 右側：同步狀態 + 桌面版 Tab（手機隱藏） -->
+                <div class="flex items-center space-x-1 sm:space-x-4 flex-shrink-0">
+                    <!-- 同步狀態 -->
+                    <div id="sync-indicator" class="flex items-center space-x-1.5 text-xs text-slate-400">
+                        <span id="sync-dot" class="w-2 h-2 rounded-full bg-slate-300 flex-shrink-0"></span>
+                        <span id="sync-text" class="hidden sm:inline">連線中...</span>
                     </div>
 
-                    <button onclick="switchTab('timeline')" id="tab-btn-timeline" class="tab-btn flex items-center space-x-1.5 px-3 py-2 rounded-md text-sm font-medium text-indigo-600 bg-indigo-50">
-                        <i data-lucide="calendar" class="w-4 h-4"></i>
-                        <span>時程圖</span>
-                    </button>
-                    <button onclick="switchTab('activities')" id="tab-btn-activities" class="tab-btn flex items-center space-x-1.5 px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100">
-                        <i data-lucide="list-todo" class="w-4 h-4"></i>
-                        <span>活動清單</span>
-                    </button>
-                    <button onclick="switchTab('personnel')" id="tab-btn-personnel" class="tab-btn flex items-center space-x-1.5 px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100">
-                        <i data-lucide="users" class="w-4 h-4"></i>
-                        <span>人員清單</span>
-                    </button>
-                </nav>
+                    <!-- 桌面版導覽 Tab（手機由底部導覽列取代） -->
+                    <nav id="desktop-tabs" class="flex space-x-1 sm:space-x-2">
+                        <button onclick="switchTab('timeline')" id="tab-btn-timeline" class="tab-btn flex items-center space-x-1.5 px-3 py-2 rounded-md text-sm font-medium text-indigo-600 bg-indigo-50">
+                            <i data-lucide="calendar" class="w-4 h-4"></i>
+                            <span>時程圖</span>
+                        </button>
+                        <button onclick="switchTab('activities')" id="tab-btn-activities" class="tab-btn flex items-center space-x-1.5 px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+                            <i data-lucide="list-todo" class="w-4 h-4"></i>
+                            <span>活動清單</span>
+                        </button>
+                        <button onclick="switchTab('personnel')" id="tab-btn-personnel" class="tab-btn flex items-center space-x-1.5 px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+                            <i data-lucide="users" class="w-4 h-4"></i>
+                            <span>人員清單</span>
+                        </button>
+                    </nav>
+                </div>
+
             </div>
         </div>
     </header>
 
-    <!-- Main Content Container -->
-    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+    <!-- ══════════════════════════════════════════
+         Main Content
+    ══════════════════════════════════════════ -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-4 lg:p-8">
 
         <!-- 載入遮罩 -->
         <div id="loading-overlay" class="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
             <div class="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-            <p class="text-slate-600 font-medium">正在連線到雲端資料庫...</p>
+            <p class="text-slate-600 font-medium text-sm sm:text-base">正在連線到雲端資料庫...</p>
         </div>
 
         <!-- Project Info Banner -->
-        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6 flex flex-wrap items-center justify-between gap-4">
-            <div>
-                <h1 id="current-project-title" class="text-xl font-bold text-slate-900">載入中...</h1>
-                <p id="current-project-dates" class="text-sm text-slate-500 flex items-center mt-0.5">
-                    <i data-lucide="calendar-days" class="w-4 h-4 mr-1"></i> -
+        <div id="project-banner" class="bg-white p-3 sm:p-4 rounded-xl border border-slate-200 shadow-sm mb-4 sm:mb-6 flex flex-wrap items-center justify-between gap-3">
+            <div class="min-w-0">
+                <h1 id="current-project-title" class="text-base sm:text-xl font-bold text-slate-900 truncate">載入中...</h1>
+                <p id="current-project-dates" class="text-xs sm:text-sm text-slate-500 flex items-center mt-0.5">
+                    <i data-lucide="calendar-days" class="w-3.5 h-3.5 mr-1 flex-shrink-0"></i>
+                    <span>-</span>
                 </p>
             </div>
             <div id="current-project-members" class="flex items-center -space-x-2 overflow-hidden"></div>
         </div>
 
-        <!-- Tab 1: 時程圖 -->
-        <section id="tab-timeline" class="tab-content space-y-4">
-            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between flex-wrap gap-3">
-                <div class="flex items-center space-x-2">
-                    <span class="text-sm font-medium text-slate-700 flex items-center">
-                        <i data-lucide="filter" class="w-4 h-4 mr-1 text-slate-500"></i>日期篩選：
-                    </span>
-                    <div id="timeline-date-filters" class="flex flex-wrap gap-1.5"></div>
-                </div>
-                <div class="text-xs text-slate-500 flex items-center space-x-3">
-                    <span class="flex items-center"><span class="w-3 h-3 rounded bg-indigo-500 inline-block mr-1"></span>確定行程</span>
-                    <span class="flex items-center"><span class="w-3 h-3 rounded bg-indigo-500 bg-tentative border border-indigo-400 inline-block mr-1"></span>擬訂行程</span>
+        <!-- ── Tab 1：時程圖 ── -->
+        <section id="tab-timeline" class="tab-content space-y-3 sm:space-y-4">
+            <div class="bg-white p-3 sm:p-4 rounded-xl border border-slate-200 shadow-sm">
+                <div class="flex items-start sm:items-center justify-between flex-wrap gap-2">
+                    <div class="flex items-center space-x-2 flex-wrap gap-y-1">
+                        <span class="text-xs sm:text-sm font-medium text-slate-700 flex items-center flex-shrink-0">
+                            <i data-lucide="filter" class="w-3.5 h-3.5 mr-1 text-slate-500"></i>篩選：
+                        </span>
+                        <div id="timeline-date-filters" class="flex flex-wrap gap-1.5"></div>
+                    </div>
+                    <div class="text-xs text-slate-500 flex items-center space-x-3 flex-shrink-0">
+                        <span class="flex items-center"><span class="w-2.5 h-2.5 rounded bg-indigo-500 inline-block mr-1"></span>確定</span>
+                        <span class="flex items-center"><span class="w-2.5 h-2.5 rounded bg-indigo-500 bg-tentative border border-indigo-400 inline-block mr-1"></span>擬訂</span>
+                    </div>
                 </div>
             </div>
             <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                <div class="overflow-x-auto timeline-scroll">
-                    <div id="timeline-grid" class="min-w-[700px]"></div>
+                <div class="overflow-x-auto timeline-scroll -webkit-overflow-scrolling-touch">
+                    <div id="timeline-grid" class="min-w-[600px] sm:min-w-[700px]"></div>
                 </div>
             </div>
         </section>
 
-        <!-- Tab 2: 活動清單 -->
-        <section id="tab-activities" class="tab-content hidden space-y-4">
+        <!-- ── Tab 2：活動清單 ── -->
+        <section id="tab-activities" class="tab-content hidden space-y-3 sm:space-y-4">
             <div class="flex justify-between items-center">
-                <h2 class="text-lg font-bold text-slate-800">活動資料表</h2>
-                <button onclick="openActivityModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg flex items-center shadow-sm transition-colors">
+                <h2 class="text-base sm:text-lg font-bold text-slate-800">活動資料表</h2>
+                <button onclick="openActivityModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-medium px-3 sm:px-4 py-2 rounded-lg flex items-center shadow-sm transition-colors">
                     <i data-lucide="plus" class="w-4 h-4 mr-1"></i>新增活動
                 </button>
             </div>
-            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
+
+            <!-- 桌面版：表格；手機版：CSS 轉卡片 -->
+            <div id="activities-table-wrapper" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto sm:overflow-visible">
                 <table class="w-full text-left border-collapse text-sm">
                     <thead>
                         <tr class="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold">
@@ -172,7 +295,7 @@
                             <th class="p-3.5">開始時間</th>
                             <th class="p-3.5">結束時間</th>
                             <th class="p-3.5">集合地點</th>
-                            <th class="p-3.5">備註</th>
+                            <th class="p-3.5">聯絡資料</th>
                             <th class="p-3.5 text-center">擬訂</th>
                             <th class="p-3.5 text-center">顏色</th>
                             <th class="p-3.5 text-right">操作</th>
@@ -183,73 +306,102 @@
             </div>
         </section>
 
-        <!-- Tab 3: 人員清單 -->
-        <section id="tab-personnel" class="tab-content hidden space-y-4">
+        <!-- ── Tab 3：人員清單 ── -->
+        <section id="tab-personnel" class="tab-content hidden space-y-3 sm:space-y-4">
             <div class="flex justify-between items-center">
-                <h2 class="text-lg font-bold text-slate-800">人員成員管理</h2>
-                <button onclick="openModal('add-person-modal')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg flex items-center shadow-sm transition-colors">
+                <h2 class="text-base sm:text-lg font-bold text-slate-800">人員成員管理</h2>
+                <button onclick="openModal('add-person-modal')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-medium px-3 sm:px-4 py-2 rounded-lg flex items-center shadow-sm transition-colors">
                     <i data-lucide="user-plus" class="w-4 h-4 mr-1"></i>新增成員
                 </button>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="personnel-list-container"></div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4" id="personnel-list-container"></div>
         </section>
+
     </main>
 
+    <!-- ══════════════════════════════════════════
+         手機底部導覽列（僅手機顯示）
+    ══════════════════════════════════════════ -->
+    <nav id="mobile-bottom-nav" class="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-slate-200 shadow-lg items-center justify-around h-16 px-2">
+        <button onclick="switchTab('timeline')" id="mob-btn-timeline"
+            class="mob-tab-btn flex flex-col items-center justify-center flex-1 h-full space-y-0.5 text-indigo-600">
+            <i data-lucide="calendar" class="w-5 h-5"></i>
+            <span class="text-[10px] font-semibold">時程圖</span>
+        </button>
+        <button onclick="switchTab('activities')" id="mob-btn-activities"
+            class="mob-tab-btn flex flex-col items-center justify-center flex-1 h-full space-y-0.5 text-slate-400">
+            <i data-lucide="list-todo" class="w-5 h-5"></i>
+            <span class="text-[10px] font-semibold">活動清單</span>
+        </button>
+        <button onclick="switchTab('personnel')" id="mob-btn-personnel"
+            class="mob-tab-btn flex flex-col items-center justify-center flex-1 h-full space-y-0.5 text-slate-400">
+            <i data-lucide="users" class="w-5 h-5"></i>
+            <span class="text-[10px] font-semibold">人員清單</span>
+        </button>
+    </nav>
+
+    <!-- ══════════════════════════════════════════
+         Modals
+    ══════════════════════════════════════════ -->
+
     <!-- Modal: New Project -->
-    <div id="new-project-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 space-y-4">
+    <div id="new-project-modal" class="modal-outer fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 sm:p-4">
+        <div class="modal-box bg-white rounded-2xl shadow-xl max-w-md w-full p-5 sm:p-6 space-y-4">
             <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-                <h3 class="text-lg font-bold text-slate-900">新增旅遊專案</h3>
-                <button onclick="closeModal('new-project-modal')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+                <h3 class="text-base sm:text-lg font-bold text-slate-900">新增旅遊專案</h3>
+                <button onclick="closeModal('new-project-modal')" class="text-slate-400 hover:text-slate-600 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
+            <!-- 手機拖曳提示條 -->
+            <div class="sm:hidden w-10 h-1 bg-slate-200 rounded-full mx-auto -mt-2 mb-1"></div>
             <form id="new-project-form" onsubmit="handleCreateProject(event)" class="space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">專案名稱</label>
-                    <input type="text" id="project-name-input" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="例：東京 5 天 4 夜自由行">
+                    <input type="text" id="project-name-input" required class="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-base" placeholder="例：東京 5 天 4 夜自由行">
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1">起始日期</label>
-                        <input type="date" id="project-start-input" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        <input type="date" id="project-start-input" required class="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-base">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1">終止日期</label>
-                        <input type="date" id="project-end-input" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        <input type="date" id="project-end-input" required class="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-base">
                     </div>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">初始參與人員 (用逗號分隔)</label>
-                    <input type="text" id="project-members-input" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Alice, Bob, Charlie">
+                    <input type="text" id="project-members-input" class="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-base" placeholder="Alice, Bob, Charlie">
                 </div>
                 <div class="flex justify-end space-x-2 pt-2">
-                    <button type="button" onclick="closeModal('new-project-modal')" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg">取消</button>
-                    <button type="submit" class="px-4 py-2 text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg">建立專案</button>
+                    <button type="button" onclick="closeModal('new-project-modal')" class="px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg">取消</button>
+                    <button type="submit" class="px-4 py-2.5 text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg">建立專案</button>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- Modal: Add/Edit Activity -->
-    <div id="activity-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+    <div id="activity-modal" class="modal-outer fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-0 sm:p-4">
+        <div class="modal-box bg-white rounded-2xl shadow-xl max-w-lg w-full p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-                <h3 id="activity-modal-title" class="text-lg font-bold text-slate-900">新增活動</h3>
-                <button onclick="closeModal('activity-modal')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+                <h3 id="activity-modal-title" class="text-base sm:text-lg font-bold text-slate-900">新增活動</h3>
+                <button onclick="closeModal('activity-modal')" class="text-slate-400 hover:text-slate-600 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
+            <div class="sm:hidden w-10 h-1 bg-slate-200 rounded-full mx-auto -mt-2 mb-1"></div>
             <form id="activity-form" onsubmit="handleSaveActivity(event)" class="space-y-4">
                 <input type="hidden" id="act-id">
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">活動名稱</label>
-                    <input type="text" id="act-name" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="例：淺草寺參觀">
+                    <input type="text" id="act-name" required class="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-base" placeholder="例：淺草寺參觀">
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1">開始時間</label>
-                        <input type="datetime-local" id="act-start" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        <input type="datetime-local" id="act-start" required class="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-base">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1">結束時間</label>
-                        <input type="datetime-local" id="act-end" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        <input type="datetime-local" id="act-end" required class="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-base">
                     </div>
                 </div>
                 <div>
@@ -259,95 +411,99 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1">集合地點</label>
-                        <input type="text" id="act-location" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="例：雷門前">
+                        <input type="text" id="act-location" class="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-base" placeholder="例：雷門前">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">備註</label>
-                        <input type="text" id="act-contact" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="例：090-1234-5678">
+                        <label class="block text-sm font-medium text-slate-700 mb-1">聯絡資料</label>
+                        <input type="text" id="act-contact" class="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-base" placeholder="例：090-1234-5678">
                     </div>
                 </div>
-                <div class="flex items-center justify-between pt-2">
+                <div class="flex items-center justify-between pt-1">
                     <div class="flex items-center space-x-2">
                         <input type="checkbox" id="act-tentative" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
                         <label for="act-tentative" class="text-sm font-medium text-slate-700">標記為擬訂行程</label>
                     </div>
                     <div class="flex items-center space-x-2">
-                        <label class="text-sm font-medium text-slate-700">顯示顏色</label>
-                        <input type="color" id="act-color" value="#3b82f6" class="w-8 h-8 rounded border-0 cursor-pointer">
+                        <label class="text-sm font-medium text-slate-700">顏色</label>
+                        <input type="color" id="act-color" value="#3b82f6" class="w-9 h-9 rounded border-0 cursor-pointer">
                     </div>
                 </div>
                 <div class="flex justify-end space-x-2 pt-4 border-t border-slate-100">
-                    <button type="button" onclick="closeModal('activity-modal')" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg">取消</button>
-                    <button type="submit" class="px-4 py-2 text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg">儲存活動</button>
+                    <button type="button" onclick="closeModal('activity-modal')" class="px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg">取消</button>
+                    <button type="submit" class="px-4 py-2.5 text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg">儲存活動</button>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- Modal: View Activity Detail -->
-    <div id="activity-detail-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 space-y-4">
+    <div id="activity-detail-modal" class="modal-outer fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-0 sm:p-4">
+        <div class="modal-box bg-white rounded-2xl shadow-xl max-w-md w-full p-5 sm:p-6 space-y-4">
             <div class="flex justify-between items-start border-b border-slate-100 pb-3">
                 <div>
                     <span id="detail-tentative-tag" class="hidden text-xs font-semibold px-2 py-0.5 rounded bg-amber-100 text-amber-800 mb-1 inline-block">擬訂中</span>
-                    <h3 id="detail-title" class="text-xl font-bold text-slate-900"></h3>
+                    <h3 id="detail-title" class="text-lg sm:text-xl font-bold text-slate-900"></h3>
                 </div>
-                <button onclick="closeModal('activity-detail-modal')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+                <button onclick="closeModal('activity-detail-modal')" class="text-slate-400 hover:text-slate-600 p-1 flex-shrink-0"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
+            <div class="sm:hidden w-10 h-1 bg-slate-200 rounded-full mx-auto -mt-2 mb-1"></div>
             <div class="space-y-3 text-sm">
                 <div class="flex items-start text-slate-600">
-                    <i data-lucide="clock" class="w-4 h-4 mr-2.5 mt-0.5 text-slate-400"></i>
+                    <i data-lucide="clock" class="w-4 h-4 mr-2.5 mt-0.5 text-slate-400 flex-shrink-0"></i>
                     <div><div class="font-medium text-slate-800">時間</div><div id="detail-time" class="text-slate-600"></div></div>
                 </div>
                 <div class="flex items-start text-slate-600">
-                    <i data-lucide="map-pin" class="w-4 h-4 mr-2.5 mt-0.5 text-slate-400"></i>
+                    <i data-lucide="map-pin" class="w-4 h-4 mr-2.5 mt-0.5 text-slate-400 flex-shrink-0"></i>
                     <div><div class="font-medium text-slate-800">集合地點</div><div id="detail-location"></div></div>
                 </div>
                 <div class="flex items-start text-slate-600">
-                    <i data-lucide="phone" class="w-4 h-4 mr-2.5 mt-0.5 text-slate-400"></i>
-                    <div><div class="font-medium text-slate-800">備註</div><div id="detail-contact" class="text-slate-600"></div></div>
+                    <i data-lucide="phone" class="w-4 h-4 mr-2.5 mt-0.5 text-slate-400 flex-shrink-0"></i>
+                    <div><div class="font-medium text-slate-800">聯絡資料</div><div id="detail-contact" class="text-slate-600"></div></div>
                 </div>
                 <div class="flex items-start text-slate-600">
-                    <i data-lucide="users" class="w-4 h-4 mr-2.5 mt-0.5 text-slate-400"></i>
+                    <i data-lucide="users" class="w-4 h-4 mr-2.5 mt-0.5 text-slate-400 flex-shrink-0"></i>
                     <div><div class="font-medium text-slate-800 mb-1">參與人員</div><div id="detail-participants" class="flex flex-wrap gap-1.5"></div></div>
                 </div>
             </div>
             <div class="flex justify-end space-x-2 pt-4 border-t border-slate-100">
-                <button id="detail-edit-btn" class="px-4 py-2 text-sm font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg flex items-center">
+                <button id="detail-edit-btn" class="px-4 py-2.5 text-sm font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg flex items-center">
                     <i data-lucide="edit-2" class="w-4 h-4 mr-1"></i>編輯
                 </button>
-                <button onclick="closeModal('activity-detail-modal')" class="px-4 py-2 text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg">關閉</button>
+                <button onclick="closeModal('activity-detail-modal')" class="px-4 py-2.5 text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg">關閉</button>
             </div>
         </div>
     </div>
 
     <!-- Modal: Add Person -->
-    <div id="add-person-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 space-y-4">
+    <div id="add-person-modal" class="modal-outer fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-0 sm:p-4">
+        <div class="modal-box bg-white rounded-2xl shadow-xl max-w-sm w-full p-5 sm:p-6 space-y-4">
             <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-                <h3 class="text-lg font-bold text-slate-900">新增成員</h3>
-                <button onclick="closeModal('add-person-modal')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+                <h3 class="text-base sm:text-lg font-bold text-slate-900">新增成員</h3>
+                <button onclick="closeModal('add-person-modal')" class="text-slate-400 hover:text-slate-600 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
+            <div class="sm:hidden w-10 h-1 bg-slate-200 rounded-full mx-auto -mt-2 mb-1"></div>
             <form onsubmit="handleAddPerson(event)" class="space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">成員姓名</label>
-                    <input type="text" id="person-name-input" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="例：David">
+                    <input type="text" id="person-name-input" required class="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-base" placeholder="例：David">
                 </div>
                 <div class="flex items-center justify-between">
                     <label class="text-sm font-medium text-slate-700">代表顏色</label>
-                    <input type="color" id="person-color-input" value="#10b981" class="w-8 h-8 rounded border-0 cursor-pointer">
+                    <input type="color" id="person-color-input" value="#10b981" class="w-9 h-9 rounded border-0 cursor-pointer">
                 </div>
                 <div class="flex justify-end space-x-2 pt-2">
-                    <button type="button" onclick="closeModal('add-person-modal')" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg">取消</button>
-                    <button type="submit" class="px-4 py-2 text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg">新增</button>
+                    <button type="button" onclick="closeModal('add-person-modal')" class="px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg">取消</button>
+                    <button type="submit" class="px-4 py-2.5 text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg">新增</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- JavaScript Application Logic -->
+    <!-- ══════════════════════════════════════════
+         JavaScript
+    ══════════════════════════════════════════ -->
     <script>
-        // ─── 預設資料（首次使用時寫入雲端） ───────────────────────────────
+        // ─── 預設資料 ──────────────────────────────────────────────────────
         const DEFAULT_DATA = {
             projects: [
                 {
@@ -362,13 +518,13 @@
                         { id: "u4", name: "Diana",   color: "#f59e0b" }
                     ],
                     activities: [
-                        { id: "a1",   name: "抵達特快 N'EX 抵達東京",    participants: ["u1","u2","u3","u4"], start: "2026-09-10T09:00", end: "2026-09-10T11:30", location: "成田機場 第一航廈",       contact: "JR 服務中心 +81 50-2016-1600", isTentative: false, color: "#3b82f6" },
-                        { id: "a2",   name: "飯店 Check-in & 寄放行李",  participants: ["u1","u2"],           start: "2026-09-10T12:30", end: "2026-09-10T13:30", location: "新宿格拉斯麗飯店",       contact: "櫃檯 +81 3-6833-1111",        isTentative: false, color: "#6366f1" },
-                        { id: "a2_b", name: "秋葉原動漫巡禮 (B組)",      participants: ["u3","u4"],           start: "2026-09-10T12:30", end: "2026-09-10T15:00", location: "秋葉原站",               contact: "",                            isTentative: false, color: "#ec4899" },
-                        { id: "a3",   name: "淺草寺參觀與周邊美食",      participants: ["u1","u2","u3","u4"], start: "2026-09-10T15:30", end: "2026-09-10T17:30", location: "淺草寺 雷門",            contact: "",                            isTentative: false, color: "#f59e0b" },
-                        { id: "a4",   name: "晴空塔夜景觀賞",            participants: ["u3","u4"],           start: "2026-09-10T18:30", end: "2026-09-10T21:00", location: "東京晴空塔",             contact: "客服 +81 570-55-0634",        isTentative: true,  color: "#8b5cf6" },
-                        { id: "a4_b", name: "澀谷 Sky & 購物",           participants: ["u1","u2"],           start: "2026-09-10T18:00", end: "2026-09-10T21:00", location: "澀谷 Scramble Square",  contact: "",                            isTentative: false, color: "#06b6d4" },
-                        { id: "a5",   name: "東京迪士尼樂園全日遊",      participants: ["u1","u2","u3","u4"], start: "2026-09-11T08:00", end: "2026-09-11T20:00", location: "東京迪士尼樂園大門",     contact: "",                            isTentative: false, color: "#10b981" }
+                        { id: "a1",   name: "抵達特快 N'EX 抵達東京",   participants: ["u1","u2","u3","u4"], start: "2026-09-10T09:00", end: "2026-09-10T11:30", location: "成田機場 第一航廈",      contact: "JR 服務中心 +81 50-2016-1600", isTentative: false, color: "#3b82f6" },
+                        { id: "a2",   name: "飯店 Check-in & 寄放行李", participants: ["u1","u2"],           start: "2026-09-10T12:30", end: "2026-09-10T13:30", location: "新宿格拉斯麗飯店",      contact: "櫃檯 +81 3-6833-1111",        isTentative: false, color: "#6366f1" },
+                        { id: "a2_b", name: "秋葉原動漫巡禮 (B組)",     participants: ["u3","u4"],           start: "2026-09-10T12:30", end: "2026-09-10T15:00", location: "秋葉原站",              contact: "",                            isTentative: false, color: "#ec4899" },
+                        { id: "a3",   name: "淺草寺參觀與周邊美食",     participants: ["u1","u2","u3","u4"], start: "2026-09-10T15:30", end: "2026-09-10T17:30", location: "淺草寺 雷門",           contact: "",                            isTentative: false, color: "#f59e0b" },
+                        { id: "a4",   name: "晴空塔夜景觀賞",           participants: ["u3","u4"],           start: "2026-09-10T18:30", end: "2026-09-10T21:00", location: "東京晴空塔",            contact: "客服 +81 570-55-0634",        isTentative: true,  color: "#8b5cf6" },
+                        { id: "a4_b", name: "澀谷 Sky & 購物",          participants: ["u1","u2"],           start: "2026-09-10T18:00", end: "2026-09-10T21:00", location: "澀谷 Scramble Square", contact: "",                            isTentative: false, color: "#06b6d4" },
+                        { id: "a5",   name: "東京迪士尼樂園全日遊",     participants: ["u1","u2","u3","u4"], start: "2026-09-11T08:00", end: "2026-09-11T20:00", location: "東京迪士尼樂園大門",    contact: "",                            isTentative: false, color: "#10b981" }
                     ]
                 }
             ],
@@ -376,24 +532,23 @@
             timelineSelectedDate: "ALL"
         };
 
-        // ─── 應用程式狀態 ──────────────────────────────────────────────────
-        let appData = JSON.parse(JSON.stringify(DEFAULT_DATA));
-        let _isSaving = false;          // 防止 onSnapshot 回寫自己觸發的更新
-        let _unsubscribe = null;        // Firestore 監聽器取消函式
+        // ─── 狀態 ──────────────────────────────────────────────────────────
+        let appData    = JSON.parse(JSON.stringify(DEFAULT_DATA));
+        let _isSaving  = false;
+        let _unsubscribe = null;
 
         // ─── 同步狀態 UI ───────────────────────────────────────────────────
         function setSyncStatus(status) {
-            // status: 'connecting' | 'synced' | 'saving' | 'error'
             const dot  = document.getElementById("sync-dot");
             const text = document.getElementById("sync-text");
-            const map = {
-                connecting: { cls: "bg-slate-300",  label: "連線中..."  },
-                synced:     { cls: "bg-green-400",   label: "已同步"     },
-                saving:     { cls: "bg-amber-400 animate-pulse", label: "儲存中..." },
-                error:      { cls: "bg-red-400",     label: "離線模式"   }
+            const map  = {
+                connecting: { cls: "bg-slate-300",                    label: "連線中..."  },
+                synced:     { cls: "bg-green-400",                    label: "已同步"     },
+                saving:     { cls: "bg-amber-400 animate-pulse",      label: "儲存中..."  },
+                error:      { cls: "bg-red-400",                      label: "離線模式"   }
             };
             const s = map[status] || map.connecting;
-            dot.className  = `w-2 h-2 rounded-full ${s.cls}`;
+            dot.className    = `w-2 h-2 rounded-full flex-shrink-0 ${s.cls}`;
             text.textContent = s.label;
         }
 
@@ -402,10 +557,8 @@
             return window._fsDoc(window._db, "tripplanner", "shared");
         }
 
-        // 儲存到 Firestore（取代 localStorage.setItem）
         async function saveData() {
             if (!window._firebaseReady) {
-                // Firebase 尚未就緒，暫存到 localStorage 備援
                 localStorage.setItem("trip_planner_backup", JSON.stringify(appData));
                 return;
             }
@@ -417,39 +570,30 @@
             } catch (e) {
                 console.error("Firestore 儲存失敗", e);
                 setSyncStatus("error");
-                // 備援：存到 localStorage
                 localStorage.setItem("trip_planner_backup", JSON.stringify(appData));
             } finally {
-                // 短暫延遲後解除旗標，避免 onSnapshot 立即觸發重繪
                 setTimeout(() => { _isSaving = false; }, 800);
             }
         }
 
-        // 從 Firestore 載入並開始即時監聽
         async function initCloudSync() {
             setSyncStatus("connecting");
             try {
                 const docRef = getDocRef();
-
-                // 首次載入
-                const snap = await window._fsGetDoc(docRef);
+                const snap   = await window._fsGetDoc(docRef);
                 if (snap.exists()) {
                     appData = snap.data();
                 } else {
-                    // 雲端尚無資料 → 寫入預設資料
                     await window._fsSetDoc(docRef, appData);
                 }
-
                 setSyncStatus("synced");
                 document.getElementById("loading-overlay").classList.add("hidden");
-
                 renderProjectSelector();
                 loadProject(appData.currentProjectId);
                 lucide.createIcons();
 
-                // 即時監聽其他人的變更
                 _unsubscribe = window._fsOnSnapshot(docRef, (snapshot) => {
-                    if (_isSaving) return;   // 忽略自己觸發的更新
+                    if (_isSaving) return;
                     if (snapshot.exists()) {
                         appData = snapshot.data();
                         renderProjectSelector();
@@ -457,30 +601,24 @@
                         setSyncStatus("synced");
                     }
                 });
-
             } catch (e) {
                 console.error("Firestore 初始化失敗，切換到離線模式", e);
                 setSyncStatus("error");
                 document.getElementById("loading-overlay").classList.add("hidden");
-
-                // 嘗試從 localStorage 備援載入
                 const backup = localStorage.getItem("trip_planner_backup");
-                if (backup) {
-                    try { appData = JSON.parse(backup); } catch (_) {}
-                }
+                if (backup) { try { appData = JSON.parse(backup); } catch (_) {} }
                 renderProjectSelector();
                 loadProject(appData.currentProjectId);
                 lucide.createIcons();
             }
         }
 
-        // ─── 初始化：等待 Firebase 模組就緒 ──────────────────────────────
+        // ─── 初始化 ────────────────────────────────────────────────────────
         document.addEventListener("DOMContentLoaded", () => {
             if (window._firebaseReady) {
                 initCloudSync();
             } else {
                 window.addEventListener("firebase-ready", initCloudSync, { once: true });
-                // 若 5 秒後 Firebase 仍未就緒，切換離線模式
                 setTimeout(() => {
                     if (!window._firebaseReady) {
                         console.warn("Firebase 載入逾時，切換到離線模式");
@@ -494,20 +632,35 @@
             }
         });
 
-        // ─── Tab 切換 ─────────────────────────────────────────────────────
+        // ─── Tab 切換（同步更新桌面 Tab + 手機底部導覽） ──────────────────
         function switchTab(tabName) {
             document.querySelectorAll(".tab-content").forEach(el => el.classList.add("hidden"));
+
+            // 桌面版 Tab 按鈕
             document.querySelectorAll(".tab-btn").forEach(el => {
                 el.classList.remove("text-indigo-600", "bg-indigo-50");
                 el.classList.add("text-slate-600", "hover:text-slate-900", "hover:bg-slate-100");
             });
-            const activeTab = document.getElementById(`tab-${tabName}`);
             const activeBtn = document.getElementById(`tab-btn-${tabName}`);
-            if (activeTab) activeTab.classList.remove("hidden");
             if (activeBtn) {
                 activeBtn.classList.remove("text-slate-600", "hover:text-slate-900", "hover:bg-slate-100");
                 activeBtn.classList.add("text-indigo-600", "bg-indigo-50");
             }
+
+            // 手機底部導覽按鈕
+            document.querySelectorAll(".mob-tab-btn").forEach(el => {
+                el.classList.remove("text-indigo-600");
+                el.classList.add("text-slate-400");
+            });
+            const activeMobBtn = document.getElementById(`mob-btn-${tabName}`);
+            if (activeMobBtn) {
+                activeMobBtn.classList.remove("text-slate-400");
+                activeMobBtn.classList.add("text-indigo-600");
+            }
+
+            const activeTab = document.getElementById(`tab-${tabName}`);
+            if (activeTab) activeTab.classList.remove("hidden");
+
             if (tabName === "timeline")   renderTimeline();
             if (tabName === "activities") renderActivitiesTable();
             if (tabName === "personnel")  renderPersonnelList();
@@ -536,10 +689,10 @@
             if (!project) return;
             document.getElementById("current-project-title").innerText = project.name;
             document.getElementById("current-project-dates").innerHTML =
-                `<i data-lucide="calendar-days" class="w-4 h-4 mr-1"></i> ${project.startDate} 至 ${project.endDate}`;
+                `<i data-lucide="calendar-days" class="w-3.5 h-3.5 mr-1 flex-shrink-0"></i><span>${project.startDate} 至 ${project.endDate}</span>`;
             const membersContainer = document.getElementById("current-project-members");
             membersContainer.innerHTML = project.personnel.map(m =>
-                `<div class="inline-flex items-center justify-center w-7 h-7 rounded-full text-white font-bold text-xs ring-2 ring-white" style="background-color: ${m.color}" title="${m.name}">${m.name.charAt(0).toUpperCase()}</div>`
+                `<div class="inline-flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-full text-white font-bold text-xs ring-2 ring-white" style="background-color: ${m.color}" title="${m.name}">${m.name.charAt(0).toUpperCase()}</div>`
             ).join("");
             renderTimeline();
             renderActivitiesTable();
@@ -556,9 +709,7 @@
             const memberNames = rawMembers ? rawMembers.split(",").map(s => s.trim()).filter(Boolean) : ["Alice", "Bob"];
             const colors = ["#ef4444", "#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899"];
             const personnel = memberNames.map((mName, idx) => ({
-                id: "u_" + Date.now() + "_" + idx,
-                name: mName,
-                color: colors[idx % colors.length]
+                id: "u_" + Date.now() + "_" + idx, name: mName, color: colors[idx % colors.length]
             }));
             const newProj = { id: "p_" + Date.now(), name, startDate, endDate, personnel, activities: [] };
             appData.projects.push(newProj);
@@ -595,7 +746,8 @@
                 dates.push(curr.toISOString().split("T")[0]);
                 curr.setDate(curr.getDate() + 1);
             }
-            let filterHtml = `<button onclick="setTimelineDate('ALL')" class="px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${appData.timelineSelectedDate === 'ALL' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">顯示全部 (${dates.length}天)</button>`;
+
+            let filterHtml = `<button onclick="setTimelineDate('ALL')" class="px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${appData.timelineSelectedDate === 'ALL' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">全部(${dates.length}天)</button>`;
             dates.forEach(d => {
                 const isSelected = appData.timelineSelectedDate === d;
                 filterHtml += `<button onclick="setTimelineDate('${d}')" class="px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${isSelected ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">${d.substring(5)}</button>`;
@@ -619,20 +771,24 @@
             }
 
             const gridContainer = document.getElementById("timeline-grid");
-            let gridHtml = `<div class="grid" style="grid-template-columns: 80px repeat(${displayDates.length}, minmax(180px, 1fr));">`;
-            gridHtml += `<div class="p-3 bg-slate-50 border-b border-r border-slate-200 text-xs font-semibold text-slate-500 text-center sticky left-0 z-10">時間</div>`;
+            let gridHtml = `<div class="grid" style="grid-template-columns: 52px repeat(${displayDates.length}, minmax(160px, 1fr));">`;
+            gridHtml += `<div class="p-2 bg-slate-50 border-b border-r border-slate-200 text-[10px] font-semibold text-slate-500 text-center sticky left-0 z-10">時間</div>`;
             displayDates.forEach(d => {
-                gridHtml += `<div class="p-3 bg-slate-50 border-b border-r border-slate-200 text-xs font-bold text-slate-700 text-center">${d}</div>`;
+                gridHtml += `<div class="p-2 bg-slate-50 border-b border-r border-slate-200 text-xs font-bold text-slate-700 text-center">${d}</div>`;
             });
             for (let h = minHour; h < maxHour; h++) {
                 const hourLabel = `${String(h).padStart(2, '0')}:00`;
-                gridHtml += `<div class="h-16 p-1 border-b border-r border-slate-100 text-[11px] font-mono text-slate-400 text-center relative bg-slate-50/50 sticky left-0 z-10 flex items-center justify-center">${hourLabel}</div>`;
+                gridHtml += `<div class="h-14 sm:h-16 p-1 border-b border-r border-slate-100 text-[10px] font-mono text-slate-400 text-center relative bg-slate-50/50 sticky left-0 z-10 flex items-center justify-center">${hourLabel}</div>`;
                 displayDates.forEach(d => {
-                    gridHtml += `<div class="h-16 border-b border-r border-slate-100 relative bg-white" id="cell-${d}-${h}"></div>`;
+                    gridHtml += `<div class="h-14 sm:h-16 border-b border-r border-slate-100 relative bg-white" id="cell-${d}-${h}"></div>`;
                 });
             }
             gridHtml += `</div>`;
             gridContainer.innerHTML = gridHtml;
+
+            // 每小時高度（px）：手機 56px，桌面 64px
+            const isMobile = window.innerWidth < 768;
+            const cellH    = isMobile ? 56 : 64;
 
             displayDates.forEach(d => {
                 const dayActs = filteredActivities
@@ -674,12 +830,12 @@
                         const startCellIndex = Math.floor(act.startH);
                         const cell = document.getElementById(`cell-${d}-${startCellIndex}`);
                         if (!cell) return;
-                        const height    = Math.max((act.endH - act.startH) * 64, 28);
-                        const widthPct  = 100 / totalTracks;
-                        const leftPct   = act.trackIndex * widthPct;
-                        const block     = document.createElement("div");
-                        block.className = `absolute rounded-lg p-2 text-white shadow-sm cursor-pointer transition-all hover:scale-[1.02] hover:z-30 hover:shadow-md z-20 overflow-hidden flex flex-col justify-between ${act.isTentative ? 'bg-tentative border border-white/40' : ''}`;
-                        block.style.top             = `${(act.startH - startCellIndex) * 64}px`;
+                        const height   = Math.max((act.endH - act.startH) * cellH, 24);
+                        const widthPct = 100 / totalTracks;
+                        const leftPct  = act.trackIndex * widthPct;
+                        const block    = document.createElement("div");
+                        block.className = `absolute rounded-md sm:rounded-lg p-1.5 text-white shadow-sm cursor-pointer transition-all hover:scale-[1.02] hover:z-30 hover:shadow-md z-20 overflow-hidden flex flex-col justify-between ${act.isTentative ? 'bg-tentative border border-white/40' : ''}`;
+                        block.style.top             = `${(act.startH - startCellIndex) * cellH}px`;
                         block.style.height          = `${height}px`;
                         block.style.left            = `calc(${leftPct}% + 2px)`;
                         block.style.width           = `calc(${widthPct}% - 4px)`;
@@ -688,14 +844,14 @@
                         const partDots = act.participants.map(pid => {
                             const person = project.personnel.find(p => p.id === pid);
                             if (!person) return '';
-                            return `<span class="inline-flex items-center justify-center w-4 h-4 rounded-full text-[9px] font-bold text-white ring-1 ring-white/50" style="background-color:${person.color}">${person.name.charAt(0).toUpperCase()}</span>`;
+                            return `<span class="inline-flex items-center justify-center w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full text-[8px] sm:text-[9px] font-bold text-white ring-1 ring-white/50" style="background-color:${person.color}">${person.name.charAt(0).toUpperCase()}</span>`;
                         }).join("");
                         block.innerHTML = `
                             <div>
-                                <div class="font-bold text-xs truncate leading-tight">${act.name}</div>
-                                <div class="text-[10px] opacity-90 font-mono">${act.start.substring(11,16)} - ${act.end.substring(11,16)}</div>
+                                <div class="font-bold text-[10px] sm:text-xs truncate leading-tight">${act.name}</div>
+                                <div class="text-[9px] sm:text-[10px] opacity-90 font-mono">${act.start.substring(11,16)}-${act.end.substring(11,16)}</div>
                             </div>
-                            <div class="flex items-center space-x-0.5 mt-1">${partDots}</div>`;
+                            <div class="flex items-center space-x-0.5 mt-0.5">${partDots}</div>`;
                         cell.appendChild(block);
                     });
                 });
@@ -710,10 +866,10 @@
         // ─── Tab 2：活動清單 ──────────────────────────────────────────────
         function renderActivitiesTable() {
             const project = getCurrentProject();
-            const tbody = document.getElementById("activities-table-body");
+            const tbody   = document.getElementById("activities-table-body");
             if (!project) return;
             if (project.activities.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-400">目前尚無活動資料，點擊上方按鈕新增。</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-400 text-sm">目前尚無活動資料，點擊上方按鈕新增。</td></tr>`;
                 return;
             }
             tbody.innerHTML = project.activities.map(act => {
@@ -725,17 +881,17 @@
                 const mapsUrl = act.location ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(act.location)}` : '#';
                 return `
                     <tr class="hover:bg-slate-50 transition-colors">
-                        <td class="p-3.5 font-semibold text-slate-800">${act.name}</td>
-                        <td class="p-3.5"><div class="flex flex-wrap gap-1">${partBadges}</div></td>
-                        <td class="p-3.5 font-mono text-xs text-slate-600">${act.start.replace("T", " ")}</td>
-                        <td class="p-3.5 font-mono text-xs text-slate-600">${act.end.replace("T", " ")}</td>
-                        <td class="p-3.5">${act.location ? `<a href="${mapsUrl}" target="_blank" class="text-indigo-600 hover:text-indigo-800 inline-flex items-center hover:underline"><i data-lucide="map-pin" class="w-3.5 h-3.5 mr-1"></i>${act.location}</a>` : '-'}</td>
-                        <td class="p-3.5 text-slate-600 text-xs">${act.contact || '-'}</td>
-                        <td class="p-3.5 text-center">${act.isTentative ? `<span class="px-2 py-0.5 text-xs bg-amber-100 text-amber-800 rounded-full font-medium">是</span>` : `<span class="text-xs text-slate-400">否</span>`}</td>
-                        <td class="p-3.5 text-center"><span class="inline-block w-5 h-5 rounded-full border border-slate-200" style="background-color: ${act.color}"></span></td>
-                        <td class="p-3.5 text-right space-x-1">
-                            <button onclick="openActivityModal('${act.id}')" class="p-1 text-slate-500 hover:text-indigo-600"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
-                            <button onclick="deleteActivity('${act.id}')" class="p-1 text-slate-500 hover:text-red-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        <td class="p-3.5 font-semibold text-slate-800" data-label="活動">${act.name}</td>
+                        <td class="p-3.5" data-label="人員"><div class="flex flex-wrap gap-1">${partBadges}</div></td>
+                        <td class="p-3.5 font-mono text-xs text-slate-600" data-label="開始">${act.start.replace("T", " ")}</td>
+                        <td class="p-3.5 font-mono text-xs text-slate-600" data-label="結束">${act.end.replace("T", " ")}</td>
+                        <td class="p-3.5" data-label="地點">${act.location ? `<a href="${mapsUrl}" target="_blank" class="text-indigo-600 hover:text-indigo-800 inline-flex items-center hover:underline"><i data-lucide="map-pin" class="w-3.5 h-3.5 mr-1"></i>${act.location}</a>` : '-'}</td>
+                        <td class="p-3.5 text-slate-600 text-xs" data-label="聯絡">${act.contact || '-'}</td>
+                        <td class="p-3.5 text-center" data-label="擬訂">${act.isTentative ? `<span class="px-2 py-0.5 text-xs bg-amber-100 text-amber-800 rounded-full font-medium">是</span>` : `<span class="text-xs text-slate-400">否</span>`}</td>
+                        <td class="p-3.5 text-center" data-label="顏色"><span class="inline-block w-5 h-5 rounded-full border border-slate-200" style="background-color: ${act.color}"></span></td>
+                        <td class="p-3.5 text-right space-x-1" data-label="">
+                            <button onclick="openActivityModal('${act.id}')" class="p-1.5 text-slate-500 hover:text-indigo-600 rounded"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                            <button onclick="deleteActivity('${act.id}')" class="p-1.5 text-slate-500 hover:text-red-600 rounded"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                         </td>
                     </tr>`;
             }).join("");
@@ -747,23 +903,23 @@
             document.getElementById("activity-form").reset();
             const container = document.getElementById("act-participants-checkboxes");
             container.innerHTML = project.personnel.map(p => `
-                <label class="flex items-center space-x-2 text-sm text-slate-700 cursor-pointer">
-                    <input type="checkbox" value="${p.id}" class="act-part-cb rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
-                    <span class="w-2.5 h-2.5 rounded-full" style="background-color:${p.color}"></span>
+                <label class="flex items-center space-x-2 text-sm text-slate-700 cursor-pointer py-0.5">
+                    <input type="checkbox" value="${p.id}" class="act-part-cb w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                    <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color:${p.color}"></span>
                     <span>${p.name}</span>
                 </label>`).join("");
             if (actId) {
                 const act = project.activities.find(a => a.id === actId);
                 if (act) {
                     document.getElementById("activity-modal-title").innerText = "編輯活動";
-                    document.getElementById("act-id").value        = act.id;
-                    document.getElementById("act-name").value      = act.name;
-                    document.getElementById("act-start").value     = act.start;
-                    document.getElementById("act-end").value       = act.end;
-                    document.getElementById("act-location").value  = act.location || "";
-                    document.getElementById("act-contact").value   = act.contact  || "";
+                    document.getElementById("act-id").value          = act.id;
+                    document.getElementById("act-name").value        = act.name;
+                    document.getElementById("act-start").value       = act.start;
+                    document.getElementById("act-end").value         = act.end;
+                    document.getElementById("act-location").value    = act.location || "";
+                    document.getElementById("act-contact").value     = act.contact  || "";
                     document.getElementById("act-tentative").checked = act.isTentative;
-                    document.getElementById("act-color").value     = act.color || "#3b82f6";
+                    document.getElementById("act-color").value       = act.color || "#3b82f6";
                     document.querySelectorAll(".act-part-cb").forEach(cb => { cb.checked = act.participants.includes(cb.value); });
                 }
             } else {
@@ -781,15 +937,15 @@
             const id = document.getElementById("act-id").value;
             const selectedParticipants = Array.from(document.querySelectorAll(".act-part-cb:checked")).map(cb => cb.value);
             const activityData = {
-                id:          id || "a_" + Date.now(),
-                name:        document.getElementById("act-name").value,
-                start:       document.getElementById("act-start").value,
-                end:         document.getElementById("act-end").value,
+                id:           id || "a_" + Date.now(),
+                name:         document.getElementById("act-name").value,
+                start:        document.getElementById("act-start").value,
+                end:          document.getElementById("act-end").value,
                 participants: selectedParticipants,
-                location:    document.getElementById("act-location").value,
-                contact:     document.getElementById("act-contact").value,
-                isTentative: document.getElementById("act-tentative").checked,
-                color:       document.getElementById("act-color").value
+                location:     document.getElementById("act-location").value,
+                contact:      document.getElementById("act-contact").value,
+                isTentative:  document.getElementById("act-tentative").checked,
+                color:        document.getElementById("act-color").value
             };
             if (id) {
                 const index = project.activities.findIndex(a => a.id === id);
@@ -843,13 +999,13 @@
 
         // ─── Tab 3：人員管理 ──────────────────────────────────────────────
         function renderPersonnelList() {
-            const project = getCurrentProject();
+            const project   = getCurrentProject();
             const container = document.getElementById("personnel-list-container");
             if (!project) return;
             container.innerHTML = project.personnel.map(p => `
                 <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
                     <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-inner" style="background-color: ${p.color}">
+                        <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-inner flex-shrink-0" style="background-color: ${p.color}">
                             ${p.name.charAt(0).toUpperCase()}
                         </div>
                         <div>
@@ -858,7 +1014,7 @@
                         </div>
                     </div>
                     <div class="flex items-center space-x-2">
-                        <input type="color" value="${p.color}" onchange="updatePersonColor('${p.id}', this.value)" class="w-8 h-8 rounded border-0 cursor-pointer" title="更換代表色">
+                        <input type="color" value="${p.color}" onchange="updatePersonColor('${p.id}', this.value)" class="w-9 h-9 rounded border-0 cursor-pointer" title="更換代表色">
                         <button onclick="deletePerson('${p.id}')" class="p-1.5 text-slate-400 hover:text-red-600 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                     </div>
                 </div>`).join("");
@@ -868,8 +1024,8 @@
         function handleAddPerson(e) {
             e.preventDefault();
             const project = getCurrentProject();
-            const name  = document.getElementById("person-name-input").value;
-            const color = document.getElementById("person-color-input").value;
+            const name    = document.getElementById("person-name-input").value;
+            const color   = document.getElementById("person-color-input").value;
             project.personnel.push({ id: "u_" + Date.now(), name, color });
             saveData();
             closeModal("add-person-modal");
@@ -893,7 +1049,7 @@
             loadProject(project.id);
         }
 
-        // ─── 通用 Modal 工具 ──────────────────────────────────────────────
+        // ─── 通用 Modal ───────────────────────────────────────────────────
         function openModal(id)  { document.getElementById(id).classList.remove("hidden"); }
         function closeModal(id) { document.getElementById(id).classList.add("hidden"); }
     </script>
