@@ -3,106 +3,161 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>旅遊行程共同規劃與圖像化 Web UI</title>
+    <title>TripPlanner</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         .bg-tentative {
-            background-image: repeating-linear-gradient(
-                45deg,
-                rgba(255, 255, 255, 0.4),
-                rgba(255, 255, 255, 0.4) 10px,
-                transparent 10px,
-                transparent 20px
-            );
+            background-image: repeating-linear-gradient(45deg,rgba(255,255,255,0.4),rgba(255,255,255,0.4) 10px,transparent 10px,transparent 20px);
         }
-        .timeline-scroll::-webkit-scrollbar { height: 8px; }
-        .timeline-scroll::-webkit-scrollbar-track { background: #f1f5f9; }
-        .timeline-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        #sync-indicator { transition: opacity 0.5s ease; }
+        .timeline-scroll::-webkit-scrollbar{height:8px}
+        .timeline-scroll::-webkit-scrollbar-track{background:#f1f5f9}
+        .timeline-scroll::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px}
+        #sync-indicator{transition:opacity .5s ease}
+
+        /* ── Logo 上下翻轉（繞 X 軸） ── */
+        .logo-flip-wrapper{
+            perspective:600px;
+            display:inline-flex;
+            align-items:center;
+            cursor:pointer;
+            position:relative;
+        }
+        .logo-sizer{
+            visibility:hidden;
+            display:flex;
+            align-items:center;
+            gap:6px;
+            white-space:nowrap;
+            font-weight:700;
+            font-size:1.125rem;
+        }
+        @media(min-width:640px){.logo-sizer{font-size:1.25rem}}
+        .logo-flip-inner{
+            position:absolute;
+            inset:0;
+            transform-style:preserve-3d;
+            transition:transform .55s cubic-bezier(.4,0,.2,1);
+            display:flex;
+            align-items:center;
+        }
+        /* ✅ 上下翻轉：繞 X 軸旋轉 180deg */
+        .logo-flip-inner.flipped{transform:rotateX(180deg)}
+        .logo-face{
+            position:absolute;
+            inset:0;
+            backface-visibility:hidden;
+            -webkit-backface-visibility:hidden;
+            display:flex;
+            align-items:center;
+            gap:6px;
+            white-space:nowrap;
+        }
+        .logo-face.front{transform:rotateX(0deg)}
+        /* 背面需補償 X 軸翻轉後的上下顛倒 */
+        .logo-face.back{transform:rotateX(180deg)}
+
+        /* ── BillSplitter 樣式 ── */
+        :root{--bs-primary:#2563eb;--bs-primary-hover:#1d4ed8;--bs-bg:#f8fafc;--bs-card:#ffffff;--bs-text:#0f172a;--bs-border:#e2e8f0;--bs-danger:#ef4444}
+        .bs-card{background:var(--bs-card);border-radius:12px;padding:20px;box-shadow:0 1px 3px rgba(0,0,0,.1);margin-bottom:24px}
+        .bs-section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;border-bottom:1px solid var(--bs-border);padding-bottom:12px}
+        .bs-section-header h2{font-size:1.1rem;font-weight:700;color:var(--bs-text)}
+        .bs-btn{background:var(--bs-primary);color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:.9rem;font-weight:500}
+        .bs-btn:hover{background:var(--bs-primary-hover)}
+        .bs-btn-outline{background:transparent;color:var(--bs-text);border:1px solid var(--bs-border)}
+        .bs-btn-outline:hover{background:var(--bs-border)}
+        .bs-btn-danger{background:var(--bs-danger)}
+        .bs-btn-danger:hover{background:#dc2626}
+        .bs-btn-success{background:#16a34a;color:#fff}
+        .bs-btn-success:hover{background:#15803d}
+        .bs-btn-sm{padding:4px 8px;font-size:.8rem}
+        .bs-btn-icon{width:38px;min-width:38px;height:38px;padding:0;display:inline-flex;justify-content:center;align-items:center;font-size:1.15rem;font-weight:700}
+        .bs-bill-list{list-style:none}
+        .bs-bill-item{display:flex;justify-content:space-between;align-items:center;padding:12px;border:1px solid var(--bs-border);border-radius:8px;margin-bottom:8px;cursor:pointer;transition:background .2s}
+        .bs-bill-item:hover{background:#f1f5f9}
+        .bs-settlement-item{padding:10px 0;border-bottom:1px dashed var(--bs-border);display:flex;justify-content:space-between}
+        .bs-settlement-item:last-child{border-bottom:none}
+        .bs-modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);display:none;justify-content:center;align-items:center;z-index:200}
+        .bs-modal-overlay.active{display:flex}
+        .bs-modal{background:#fff;padding:24px;border-radius:12px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto}
+        .bs-modal-header{display:flex;justify-content:space-between;margin-bottom:16px;align-items:center}
+        .bs-form-group{margin-bottom:16px}
+        .bs-form-group label{display:block;margin-bottom:6px;font-size:.9rem;font-weight:500}
+        .bs-form-control{width:100%;padding:8px 12px;border:1px solid var(--bs-border);border-radius:6px;font-size:.9rem}
+        .bs-dynamic-row{display:flex;gap:8px;margin-bottom:8px;align-items:center}
+        .bs-toggle-group{display:flex;background:var(--bs-bg);border-radius:6px;padding:2px;border:1px solid var(--bs-border)}
+        .bs-toggle-btn{padding:4px 12px;border:none;background:transparent;font-size:.8rem;cursor:pointer;border-radius:4px}
+        .bs-toggle-btn.active{background:#fff;font-weight:700;box-shadow:0 1px 2px rgba(0,0,0,.1)}
+        .bs-member-chip{display:inline-flex;align-items:center;padding:5px 9px;border-radius:999px;background:#f1f5f9;color:#334155;font-size:.82rem;gap:6px}
+        .bs-empty-hint{color:#64748b;font-size:.85rem}
 
         /* ── 手機底部導覽列 ── */
-        #mobile-bottom-nav { display: none; }
-        @media (max-width: 767px) {
-            #mobile-bottom-nav { display: flex; }
-            main { padding-bottom: 80px !important; }
-            #desktop-tabs { display: none !important; }
-            header .max-w-7xl { padding-left: 12px !important; padding-right: 12px !important; }
-            #project-select { max-width: 130px; }
-            #sync-text { display: none; }
-            #activities-table-wrapper table,
-            #activities-table-wrapper thead,
-            #activities-table-wrapper tbody,
-            #activities-table-wrapper th,
-            #activities-table-wrapper td,
-            #activities-table-wrapper tr { display: block; }
-            #activities-table-wrapper thead { display: none; }
-            #activities-table-wrapper tbody tr {
-                background: #fff;
-                border: 1px solid #e2e8f0;
-                border-radius: 12px;
-                margin-bottom: 12px;
-                padding: 12px;
-                box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-            }
-            #activities-table-wrapper tbody td {
-                padding: 4px 0;
-                border: none;
-                font-size: 13px;
-                display: flex;
-                align-items: flex-start;
-                gap: 6px;
-            }
-            #activities-table-wrapper tbody td::before {
-                content: attr(data-label);
-                font-weight: 600;
-                color: #64748b;
-                min-width: 64px;
-                font-size: 11px;
-                padding-top: 2px;
-                flex-shrink: 0;
-            }
-            #activities-table-wrapper tbody td[data-label=""] {
-                justify-content: flex-end;
-                padding-top: 8px;
-                margin-top: 4px;
-                border-top: 1px solid #f1f5f9;
-            }
-            #activities-table-wrapper tbody td[data-label=""]::before { display: none; }
-            #personnel-list-container { grid-template-columns: 1fr !important; }
-            .modal-box {
-                position: fixed !important;
-                bottom: 0 !important;
-                left: 0 !important;
-                right: 0 !important;
-                top: auto !important;
-                border-radius: 20px 20px 0 0 !important;
-                max-width: 100% !important;
-                max-height: 92vh;
-                overflow-y: auto;
-                animation: slideUp 0.25s ease;
-            }
-            .modal-outer { align-items: flex-end !important; }
-            @keyframes slideUp {
-                from { transform: translateY(100%); }
-                to   { transform: translateY(0); }
-            }
-            #project-banner { padding: 12px !important; }
-            #current-project-title { font-size: 16px !important; }
-            #timeline-date-filters { gap: 6px; }
-            #loading-overlay p { font-size: 14px; }
+        #mobile-bottom-nav{display:none}
+        @media(max-width:767px){
+            #mobile-bottom-nav{display:flex}
+            main{padding-bottom:80px!important}
+            #desktop-tabs{display:none!important}
+            header .max-w-7xl{padding-left:12px!important;padding-right:12px!important}
+            #project-select{max-width:110px}
+            #sync-text{display:none}
+            #activities-table-wrapper table,#activities-table-wrapper thead,
+            #activities-table-wrapper tbody,#activities-table-wrapper th,
+            #activities-table-wrapper td,#activities-table-wrapper tr{display:block}
+            #activities-table-wrapper thead{display:none}
+            #activities-table-wrapper tbody tr{background:#fff;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:12px;padding:12px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+            #activities-table-wrapper tbody td{padding:4px 0;border:none;font-size:13px;display:flex;align-items:flex-start;gap:6px}
+            #activities-table-wrapper tbody td::before{content:attr(data-label);font-weight:600;color:#64748b;min-width:64px;font-size:11px;padding-top:2px;flex-shrink:0}
+            #activities-table-wrapper tbody td[data-label=""]{justify-content:flex-end;padding-top:8px;margin-top:4px;border-top:1px solid #f1f5f9}
+            #activities-table-wrapper tbody td[data-label=""]::before{display:none}
+            #personnel-list-container{grid-template-columns:1fr!important}
+            .modal-box{position:fixed!important;bottom:0!important;left:0!important;right:0!important;top:auto!important;border-radius:20px 20px 0 0!important;max-width:100%!important;max-height:92vh;overflow-y:auto;animation:slideUp .25s ease}
+            .modal-outer{align-items:flex-end!important}
+            @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+            #project-banner{padding:12px!important}
+            #current-project-title{font-size:16px!important}
+            #timeline-date-filters{gap:6px}
+            .bs-modal{border-radius:20px 20px 0 0;max-height:92vh}
+            .bs-modal-overlay{align-items:flex-end}
+            /* 手機隱藏桌面版新增按鈕 */
+            #btn-add-activity-desktop{display:none}
+            #btn-add-bill-desktop{display:none}
+            /* 手機顯示懸浮按鈕 */
+            .mobile-fab{display:flex!important}
         }
-        #mobile-bottom-nav a { transition: color 0.15s, background 0.15s; }
+        @media(min-width:768px){
+            /* 桌面隱藏懸浮按鈕 */
+            .mobile-fab{display:none!important}
+        }
+
+        /* 懸浮 FAB 按鈕共用樣式 */
+        .mobile-fab{
+            display:none;
+            position:fixed;
+            right:20px;
+            width:56px;
+            height:56px;
+            border-radius:50%;
+            border:none;
+            color:#fff;
+            font-size:28px;
+            font-weight:300;
+            align-items:center;
+            justify-content:center;
+            box-shadow:0 4px 16px rgba(0,0,0,.25);
+            cursor:pointer;
+            z-index:39;
+            transition:transform .15s, box-shadow .15s;
+            line-height:1;
+        }
+        .mobile-fab:active{transform:scale(.93);box-shadow:0 2px 8px rgba(0,0,0,.2)}
     </style>
 
-    <!-- ✅ Firebase SDK (ES Module) -->
+    <!-- ✅ Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import {
-            getFirestore, doc, getDoc, setDoc, onSnapshot, serverTimestamp
-        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { getFirestore,doc,getDoc,setDoc,onSnapshot,serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-        // ✏️ 請將下方替換為你的 Firebase 專案設定
+        // ✏️ 請替換為你的 Firebase 設定
         const firebaseConfig = {
           apiKey: "AIzaSyDDqGA_Sh3oUKDw5v0ZfL-OJWSYIEqkAs0",
           authDomain: "trip-planner-by-a01789.firebaseapp.com",
@@ -115,978 +170,1197 @@
 
         const app = initializeApp(firebaseConfig);
         const db  = getFirestore(app);
-
-        window._db                = db;
-        window._fsDoc             = doc;
-        window._fsGetDoc          = getDoc;
-        window._fsSetDoc          = setDoc;
-        window._fsOnSnapshot      = onSnapshot;
-        window._fsServerTimestamp = serverTimestamp;
-        window._firebaseReady     = true;
-
+        window._db=db; window._fsDoc=doc; window._fsGetDoc=getDoc;
+        window._fsSetDoc=setDoc; window._fsOnSnapshot=onSnapshot;
+        window._fsServerTimestamp=serverTimestamp; window._firebaseReady=true;
         window.dispatchEvent(new Event("firebase-ready"));
     </script>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans">
 
-    <!-- Header -->
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-14 sm:h-16">
+<!-- ══════════════════════════════════════════
+     Header
+══════════════════════════════════════════ -->
+<header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-14 sm:h-16">
 
-                <!-- 左側：Logo + 專案選擇器 -->
-                <div class="flex items-center space-x-2 sm:space-x-4 min-w-0">
-                    <div class="flex items-center space-x-1.5 text-indigo-600 font-bold text-lg sm:text-xl flex-shrink-0">
-                        <i data-lucide="map-pin" class="w-5 h-5 sm:w-6 sm:h-6"></i>
-                        <span class="hidden sm:inline">TripPlanner</span>
-                        <span class="sm:hidden text-base">Trip</span>
+            <div class="flex items-center space-x-2 sm:space-x-4 min-w-0">
+
+                <!-- Logo 上下翻轉區 -->
+                <div class="logo-flip-wrapper flex-shrink-0" onclick="toggleApp()" title="切換應用程式">
+                    <!-- 佔位（取較寬者） -->
+                    <div class="logo-sizer">
+                        <span>BillSplitter</span>
                     </div>
-                    <div class="h-5 w-px bg-slate-300 flex-shrink-0"></div>
-                    <div class="flex items-center space-x-1 sm:space-x-2 min-w-0">
-                        <select id="project-select" class="bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs sm:text-sm font-semibold py-1.5 px-2 sm:px-3 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-0 truncate"></select>
-                        <button onclick="openModal('new-project-modal')" class="inline-flex items-center justify-center p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors flex-shrink-0" title="新增專案">
-                            <i data-lucide="plus-circle" class="w-4 h-4 sm:w-5 sm:h-5"></i>
-                        </button>
-                        <button onclick="handleDeleteCurrentProject()" class="inline-flex items-center justify-center p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0" title="刪除當前專案">
-                            <i data-lucide="trash-2" class="w-4 h-4 sm:w-5 sm:h-5"></i>
-                        </button>
+                    <div class="logo-flip-inner" id="logoFlipInner">
+                        <!-- 正面：TripPlanner -->
+                        <div class="logo-face front text-indigo-600 font-bold text-lg sm:text-xl">
+                            <i data-lucide="map-pin" class="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0"></i>
+                            <span class="hidden sm:inline">TripPlanner</span>
+                            <span class="sm:hidden">Trip</span>
+                        </div>
+                        <!-- 背面：BillSplitter -->
+                        <div class="logo-face back text-emerald-600 font-bold text-lg sm:text-xl">
+                            <i data-lucide="receipt" class="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0"></i>
+                            <span class="hidden sm:inline">BillSplitter</span>
+                            <span class="sm:hidden">Bill</span>
+                        </div>
                     </div>
                 </div>
 
-                <!-- 右側：同步狀態 + 桌面 Tab -->
-                <div class="flex items-center space-x-1 sm:space-x-4 flex-shrink-0">
-                    <div id="sync-indicator" class="flex items-center space-x-1.5 text-xs text-slate-400">
-                        <span id="sync-dot" class="w-2 h-2 rounded-full bg-slate-300 flex-shrink-0"></span>
-                        <span id="sync-text" class="hidden sm:inline">連線中...</span>
-                    </div>
-                    <nav id="desktop-tabs" class="flex space-x-1 sm:space-x-2">
-                        <button onclick="switchTab('timeline')" id="tab-btn-timeline" class="tab-btn flex items-center space-x-1.5 px-3 py-2 rounded-md text-sm font-medium text-indigo-600 bg-indigo-50">
-                            <i data-lucide="calendar" class="w-4 h-4"></i><span>時程圖</span>
-                        </button>
-                        <button onclick="switchTab('activities')" id="tab-btn-activities" class="tab-btn flex items-center space-x-1.5 px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100">
-                            <i data-lucide="list-todo" class="w-4 h-4"></i><span>活動清單</span>
-                        </button>
-                        <button onclick="switchTab('personnel')" id="tab-btn-personnel" class="tab-btn flex items-center space-x-1.5 px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100">
-                            <i data-lucide="users" class="w-4 h-4"></i><span>人員清單</span>
-                        </button>
-                    </nav>
+                <div class="h-5 w-px bg-slate-300 flex-shrink-0"></div>
+
+                <div class="flex items-center space-x-1 sm:space-x-2 min-w-0">
+                    <select id="project-select" class="bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs sm:text-sm font-semibold py-1.5 px-2 sm:px-3 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-0 truncate"></select>
+                    <button onclick="openNewProjectModal()" class="inline-flex items-center justify-center p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors flex-shrink-0" title="新增專案">
+                        <i data-lucide="plus-circle" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+                    </button>
+                    <button onclick="handleDeleteCurrentProject()" class="inline-flex items-center justify-center p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0" title="刪除當前專案">
+                        <i data-lucide="trash-2" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+                    </button>
                 </div>
             </div>
-        </div>
-    </header>
 
-    <!-- Main -->
-    <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-4 lg:p-8">
-
-        <!-- 載入遮罩 -->
-        <div id="loading-overlay" class="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
-            <div class="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-            <p class="text-slate-600 font-medium text-sm sm:text-base">正在連線到雲端資料庫...</p>
-        </div>
-
-        <!-- Project Info Banner -->
-        <div id="project-banner" class="bg-white p-3 sm:p-4 rounded-xl border border-slate-200 shadow-sm mb-4 sm:mb-6 flex flex-wrap items-center justify-between gap-3">
-            <div class="min-w-0">
-                <h1 id="current-project-title" class="text-base sm:text-xl font-bold text-slate-900 truncate">載入中...</h1>
-                <p id="current-project-dates" class="text-xs sm:text-sm text-slate-500 flex items-center mt-0.5">
-                    <i data-lucide="calendar-days" class="w-3.5 h-3.5 mr-1 flex-shrink-0"></i><span>-</span>
-                </p>
+            <div class="flex items-center space-x-1 sm:space-x-4 flex-shrink-0">
+                <div id="sync-indicator" class="flex items-center space-x-1.5 text-xs text-slate-400">
+                    <span id="sync-dot" class="w-2 h-2 rounded-full bg-slate-300 flex-shrink-0"></span>
+                    <span id="sync-text" class="hidden sm:inline">連線中...</span>
+                </div>
+                <nav id="desktop-tabs" class="flex space-x-1 sm:space-x-2">
+                    <button onclick="switchTab('timeline')" id="tab-btn-timeline" class="tab-btn flex items-center space-x-1.5 px-3 py-2 rounded-md text-sm font-medium text-indigo-600 bg-indigo-50">
+                        <i data-lucide="calendar" class="w-4 h-4"></i><span>時程圖</span>
+                    </button>
+                    <button onclick="switchTab('activities')" id="tab-btn-activities" class="tab-btn flex items-center space-x-1.5 px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+                        <i data-lucide="list-todo" class="w-4 h-4"></i><span>活動清單</span>
+                    </button>
+                    <button onclick="switchTab('personnel')" id="tab-btn-personnel" class="tab-btn flex items-center space-x-1.5 px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+                        <i data-lucide="users" class="w-4 h-4"></i><span>人員清單</span>
+                    </button>
+                </nav>
             </div>
-            <div id="current-project-members" class="flex items-center -space-x-2 overflow-hidden"></div>
         </div>
+    </div>
+</header>
 
-        <!-- Tab 1：時程圖 -->
-        <section id="tab-timeline" class="tab-content space-y-3 sm:space-y-4">
-            <div class="bg-white p-3 sm:p-4 rounded-xl border border-slate-200 shadow-sm">
-                <div class="flex items-start sm:items-center justify-between flex-wrap gap-2">
-                    <div class="flex items-center space-x-2 flex-wrap gap-y-1">
-                        <span class="text-xs sm:text-sm font-medium text-slate-700 flex items-center flex-shrink-0">
-                            <i data-lucide="filter" class="w-3.5 h-3.5 mr-1 text-slate-500"></i>篩選：
-                        </span>
-                        <div id="timeline-date-filters" class="flex flex-wrap gap-1.5"></div>
-                    </div>
+<!-- ══════════════════════════════════════════
+     TripPlanner Main
+══════════════════════════════════════════ -->
+<main id="app-trip" class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-4 lg:p-8">
+
+    <div id="loading-overlay" class="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
+        <div class="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p class="text-slate-600 font-medium text-sm sm:text-base">正在連線到雲端資料庫...</p>
+    </div>
+
+    <div id="project-banner" class="bg-white p-3 sm:p-4 rounded-xl border border-slate-200 shadow-sm mb-4 sm:mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div class="min-w-0">
+            <h1 id="current-project-title" class="text-base sm:text-xl font-bold text-slate-900 truncate">載入中...</h1>
+            <p id="current-project-dates" class="text-xs sm:text-sm text-slate-500 flex items-center mt-0.5">
+                <i data-lucide="calendar-days" class="w-3.5 h-3.5 mr-1 flex-shrink-0"></i><span>-</span>
+            </p>
+        </div>
+        <div id="current-project-members" class="flex items-center -space-x-2 overflow-hidden"></div>
+    </div>
+
+    <!-- Tab 1：時程圖 -->
+    <section id="tab-timeline" class="tab-content space-y-3 sm:space-y-4">
+        <div class="bg-white p-3 sm:p-4 rounded-xl border border-slate-200 shadow-sm">
+            <div class="flex items-start sm:items-center justify-between flex-wrap gap-2">
+                <div class="flex items-center space-x-2 flex-wrap gap-y-1">
+                    <span class="text-xs sm:text-sm font-medium text-slate-700 flex items-center flex-shrink-0">
+                        <i data-lucide="filter" class="w-3.5 h-3.5 mr-1 text-slate-500"></i>篩選：
+                    </span>
+                    <div id="timeline-date-filters" class="flex flex-wrap gap-1.5"></div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <!-- 桌面版新增活動按鈕 -->
+                    <button id="btn-add-activity-desktop" onclick="openActivityModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg flex items-center shadow-sm transition-colors">
+                        <i data-lucide="plus" class="w-3.5 h-3.5 mr-1"></i>新增活動
+                    </button>
                     <div class="text-xs text-slate-500 flex items-center space-x-3 flex-shrink-0">
                         <span class="flex items-center"><span class="w-2.5 h-2.5 rounded bg-indigo-500 inline-block mr-1"></span>確定</span>
                         <span class="flex items-center"><span class="w-2.5 h-2.5 rounded bg-indigo-500 bg-tentative border border-indigo-400 inline-block mr-1"></span>擬訂</span>
                     </div>
                 </div>
             </div>
-            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                <div class="overflow-x-auto timeline-scroll">
-                    <div id="timeline-grid" class="min-w-[600px] sm:min-w-[700px]"></div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Tab 2：活動清單 -->
-        <section id="tab-activities" class="tab-content hidden space-y-3 sm:space-y-4">
-            <div class="flex justify-between items-center">
-                <h2 class="text-base sm:text-lg font-bold text-slate-800">活動資料表</h2>
-                <button onclick="openActivityModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-medium px-3 sm:px-4 py-2 rounded-lg flex items-center shadow-sm transition-colors">
-                    <i data-lucide="plus" class="w-4 h-4 mr-1"></i>新增活動
-                </button>
-            </div>
-            <div id="activities-table-wrapper" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto sm:overflow-visible">
-                <table class="w-full text-left border-collapse text-sm">
-                    <thead>
-                        <tr class="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold">
-                            <th class="p-3.5">活動名稱</th>
-                            <th class="p-3.5">參與人員</th>
-                            <th class="p-3.5">開始時間</th>
-                            <th class="p-3.5">結束時間</th>
-                            <th class="p-3.5">集合地點</th>
-                            <th class="p-3.5">聯絡資料</th>
-                            <th class="p-3.5 text-center">擬訂</th>
-                            <th class="p-3.5 text-center">顏色</th>
-                            <th class="p-3.5 text-right">操作</th>
-                        </tr>
-                    </thead>
-                    <tbody id="activities-table-body" class="divide-y divide-slate-100"></tbody>
-                </table>
-            </div>
-        </section>
-
-        <!-- Tab 3：人員清單 -->
-        <section id="tab-personnel" class="tab-content hidden space-y-3 sm:space-y-4">
-            <div class="flex justify-between items-center">
-                <h2 class="text-base sm:text-lg font-bold text-slate-800">人員成員管理</h2>
-                <button onclick="openModal('add-person-modal')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-medium px-3 sm:px-4 py-2 rounded-lg flex items-center shadow-sm transition-colors">
-                    <i data-lucide="user-plus" class="w-4 h-4 mr-1"></i>新增成員
-                </button>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4" id="personnel-list-container"></div>
-        </section>
-    </main>
-
-    <!-- 手機底部導覽列 -->
-    <nav id="mobile-bottom-nav" class="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-slate-200 shadow-lg items-center justify-around h-16 px-2">
-        <button onclick="switchTab('timeline')" id="mob-btn-timeline" class="mob-tab-btn flex flex-col items-center justify-center flex-1 h-full space-y-0.5 text-indigo-600">
-            <i data-lucide="calendar" class="w-5 h-5"></i>
-            <span class="text-[10px] font-semibold">時程圖</span>
-        </button>
-        <button onclick="switchTab('activities')" id="mob-btn-activities" class="mob-tab-btn flex flex-col items-center justify-center flex-1 h-full space-y-0.5 text-slate-400">
-            <i data-lucide="list-todo" class="w-5 h-5"></i>
-            <span class="text-[10px] font-semibold">活動清單</span>
-        </button>
-        <button onclick="switchTab('personnel')" id="mob-btn-personnel" class="mob-tab-btn flex flex-col items-center justify-center flex-1 h-full space-y-0.5 text-slate-400">
-            <i data-lucide="users" class="w-5 h-5"></i>
-            <span class="text-[10px] font-semibold">人員清單</span>
-        </button>
-    </nav>
-
-    <!-- Modal: New Project -->
-    <div id="new-project-modal" class="modal-outer fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="modal-box bg-white rounded-2xl shadow-xl max-w-md w-full p-5 sm:p-6 space-y-4">
-            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-                <h3 class="text-base sm:text-lg font-bold text-slate-900">新增旅遊專案</h3>
-                <button onclick="closeModal('new-project-modal')" class="text-slate-400 hover:text-slate-600 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
-            </div>
-            <div class="sm:hidden w-10 h-1 bg-slate-200 rounded-full mx-auto -mt-2 mb-1"></div>
-            <form id="new-project-form" onsubmit="handleCreateProject(event)" class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">專案名稱</label>
-                    <input type="text" id="project-name-input" required class="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-base" placeholder="例：東京 5 天 4 夜自由行">
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">起始日期</label>
-                        <input type="date" id="project-start-input" required class="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-base">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">終止日期</label>
-                        <input type="date" id="project-end-input" required class="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-base">
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">初始參與人員 (用逗號分隔)</label>
-                    <input type="text" id="project-members-input" class="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-base" placeholder="Alice, Bob, Charlie">
-                </div>
-                <div class="flex justify-end space-x-2 pt-2">
-                    <button type="button" onclick="closeModal('new-project-modal')" class="px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg">取消</button>
-                    <button type="submit" class="px-4 py-2.5 text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg">建立專案</button>
-                </div>
-            </form>
         </div>
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="overflow-x-auto timeline-scroll">
+                <div id="timeline-grid" class="min-w-[600px] sm:min-w-[700px]"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tab 2：活動清單 -->
+    <section id="tab-activities" class="tab-content hidden space-y-3 sm:space-y-4">
+        <div class="flex justify-between items-center">
+            <h2 class="text-base sm:text-lg font-bold text-slate-800">活動資料表</h2>
+            <button onclick="openActivityModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-medium px-3 sm:px-4 py-2 rounded-lg flex items-center shadow-sm transition-colors">
+                <i data-lucide="plus" class="w-4 h-4 mr-1"></i>新增活動
+            </button>
+        </div>
+        <div id="activities-table-wrapper" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto sm:overflow-visible">
+            <table class="w-full text-left border-collapse text-sm">
+                <thead>
+                    <tr class="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold">
+                        <th class="p-3.5">活動名稱</th><th class="p-3.5">參與人員</th>
+                        <th class="p-3.5">開始時間</th><th class="p-3.5">結束時間</th>
+                        <th class="p-3.5">集合地點</th><th class="p-3.5">聯絡資料</th>
+                        <th class="p-3.5 text-center">擬訂</th><th class="p-3.5 text-center">顏色</th>
+                        <th class="p-3.5 text-right">操作</th>
+                    </tr>
+                </thead>
+                <tbody id="activities-table-body" class="divide-y divide-slate-100"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- Tab 3：人員清單 -->
+    <section id="tab-personnel" class="tab-content hidden space-y-3 sm:space-y-4">
+        <div class="flex justify-between items-center">
+            <h2 class="text-base sm:text-lg font-bold text-slate-800">人員成員管理</h2>
+            <button onclick="openModal('add-person-modal')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-medium px-3 sm:px-4 py-2 rounded-lg flex items-center shadow-sm transition-colors">
+                <i data-lucide="user-plus" class="w-4 h-4 mr-1"></i>新增成員
+            </button>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4" id="personnel-list-container"></div>
+    </section>
+</main>
+
+<!-- ══════════════════════════════════════════
+     BillSplitter Main
+══════════════════════════════════════════ -->
+<main id="app-bill" class="hidden flex-1 w-full mx-auto p-4 sm:p-6" style="max-width:900px">
+    <div class="bs-card flex flex-wrap items-center justify-between gap-4 mb-0">
+        <div class="min-w-0">
+            <span style="font-size:.85rem;color:#64748b">當前專案</span>
+            <h1 id="bs-project-title" class="text-lg font-bold text-slate-900 truncate">載入中...</h1>
+        </div>
+        <div id="bs-project-members" class="flex items-center -space-x-2 overflow-hidden"></div>
     </div>
 
-    <!-- Modal: Add/Edit Activity -->
-    <div id="activity-modal" class="modal-outer fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-0 sm:p-4">
-        <div class="modal-box bg-white rounded-2xl shadow-xl max-w-lg w-full p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
-            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-                <h3 id="activity-modal-title" class="text-base sm:text-lg font-bold text-slate-900">新增活動</h3>
-                <button onclick="closeModal('activity-modal')" class="text-slate-400 hover:text-slate-600 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
-            </div>
-            <div class="sm:hidden w-10 h-1 bg-slate-200 rounded-full mx-auto -mt-2 mb-1"></div>
-            <form id="activity-form" onsubmit="handleSaveActivity(event)" class="space-y-4">
-                <input type="hidden" id="act-id">
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">活動名稱</label>
-                    <input type="text" id="act-name" required class="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-base" placeholder="例：淺草寺參觀">
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">開始時間</label>
-                        <input type="datetime-local" id="act-start" required class="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-base">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">結束時間</label>
-                        <input type="datetime-local" id="act-end" required class="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-base">
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">參與人員 (可多選)</label>
-                    <div id="act-participants-checkboxes" class="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto p-2 border border-slate-200 rounded-lg"></div>
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">集合地點</label>
-                        <input type="text" id="act-location" class="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-base" placeholder="例：雷門前">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">聯絡資料</label>
-                        <input type="text" id="act-contact" class="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-base" placeholder="例：090-1234-5678">
-                    </div>
-                </div>
-                <div class="flex items-center justify-between pt-1">
-                    <div class="flex items-center space-x-2">
-                        <input type="checkbox" id="act-tentative" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
-                        <label for="act-tentative" class="text-sm font-medium text-slate-700">標記為擬訂行程</label>
-                    </div>
-                    <div class="flex items-center space-x-2">
-                        <label class="text-sm font-medium text-slate-700">顏色</label>
-                        <input type="color" id="act-color" value="#3b82f6" class="w-9 h-9 rounded border-0 cursor-pointer">
-                    </div>
-                </div>
-                <div class="flex justify-end space-x-2 pt-4 border-t border-slate-100">
-                    <button type="button" onclick="closeModal('activity-modal')" class="px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg">取消</button>
-                    <button type="submit" class="px-4 py-2.5 text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg">儲存活動</button>
-                </div>
-            </form>
+    <div class="bs-card">
+        <div class="bs-section-header">
+            <h2>單據紀錄</h2>
+            <!-- 桌面版新增單據按鈕 -->
+            <button id="btn-add-bill-desktop" class="bs-btn" onclick="bsOpenBillModal()">+ 新增單據</button>
         </div>
+        <ul class="bs-bill-list" id="bs-bill-list">
+            <li style="text-align:center;color:#64748b;padding:10px">尚無單據資料</li>
+        </ul>
     </div>
 
-    <!-- Modal: View Activity Detail -->
-    <div id="activity-detail-modal" class="modal-outer fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-0 sm:p-4">
-        <div class="modal-box bg-white rounded-2xl shadow-xl max-w-md w-full p-5 sm:p-6 space-y-4">
-            <div class="flex justify-between items-start border-b border-slate-100 pb-3">
-                <div>
-                    <span id="detail-tentative-tag" class="hidden text-xs font-semibold px-2 py-0.5 rounded bg-amber-100 text-amber-800 mb-1 inline-block">擬訂中</span>
-                    <h3 id="detail-title" class="text-lg sm:text-xl font-bold text-slate-900"></h3>
-                </div>
-                <button onclick="closeModal('activity-detail-modal')" class="text-slate-400 hover:text-slate-600 p-1 flex-shrink-0"><i data-lucide="x" class="w-5 h-5"></i></button>
+    <div class="bs-card">
+        <div class="bs-section-header">
+            <h2>帳務結算</h2>
+            <span style="font-size:.82rem;color:#64748b">最少交易數</span>
+        </div>
+        <div id="bs-settlement-list">
+            <div style="text-align:center;color:#64748b">無需交易或無單據</div>
+        </div>
+    </div>
+</main>
+
+<!-- ══════════════════════════════════════════
+     手機底部導覽列（TripPlanner）
+══════════════════════════════════════════ -->
+<nav id="mobile-bottom-nav" class="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-slate-200 shadow-lg items-center justify-around h-16 px-2">
+    <button onclick="switchTab('timeline')" id="mob-btn-timeline" class="mob-tab-btn flex flex-col items-center justify-center flex-1 h-full space-y-0.5 text-indigo-600">
+        <i data-lucide="calendar" class="w-5 h-5"></i><span class="text-[10px] font-semibold">時程圖</span>
+    </button>
+    <button onclick="switchTab('activities')" id="mob-btn-activities" class="mob-tab-btn flex flex-col items-center justify-center flex-1 h-full space-y-0.5 text-slate-400">
+        <i data-lucide="list-todo" class="w-5 h-5"></i><span class="text-[10px] font-semibold">活動清單</span>
+    </button>
+    <button onclick="switchTab('personnel')" id="mob-btn-personnel" class="mob-tab-btn flex flex-col items-center justify-center flex-1 h-full space-y-0.5 text-slate-400">
+        <i data-lucide="users" class="w-5 h-5"></i><span class="text-[10px] font-semibold">人員清單</span>
+    </button>
+</nav>
+
+<!-- ══════════════════════════════════════════
+     手機懸浮 FAB 按鈕
+══════════════════════════════════════════ -->
+<!-- TripPlanner 時程圖 FAB（底部導覽列上方） -->
+<button id="fab-add-activity"
+    class="mobile-fab"
+    style="background:#4f46e5;bottom:84px"
+    onclick="openActivityModal()"
+    title="新增活動">
+    +
+</button>
+
+<!-- BillSplitter FAB（底部導覽列上方，BillSplitter 無底部導覽列，故距底部較近） -->
+<button id="fab-add-bill"
+    class="mobile-fab"
+    style="background:#059669;bottom:24px;display:none"
+    onclick="bsOpenBillModal()"
+    title="新增單據">
+    +
+</button>
+
+<!-- ══════════════════════════════════════════
+     TripPlanner Modals
+══════════════════════════════════════════ -->
+
+<!-- Modal: New Project -->
+<div id="new-project-modal" class="modal-outer fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="modal-box bg-white rounded-2xl shadow-xl max-w-md w-full p-5 sm:p-6 space-y-4">
+        <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+            <h3 class="text-base sm:text-lg font-bold text-slate-900">新增旅遊專案</h3>
+            <button onclick="closeModal('new-project-modal')" class="text-slate-400 hover:text-slate-600 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+        <div class="sm:hidden w-10 h-1 bg-slate-200 rounded-full mx-auto -mt-2 mb-1"></div>
+        <form id="new-project-form" onsubmit="handleCreateProject(event)" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">專案名稱</label>
+                <input type="text" id="project-name-input" required class="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-base" placeholder="例：東京 5 天 4 夜自由行">
             </div>
-            <div class="sm:hidden w-10 h-1 bg-slate-200 rounded-full mx-auto -mt-2 mb-1"></div>
-            <div class="space-y-3 text-sm">
-                <div class="flex items-start text-slate-600">
-                    <i data-lucide="clock" class="w-4 h-4 mr-2.5 mt-0.5 text-slate-400 flex-shrink-0"></i>
-                    <div><div class="font-medium text-slate-800">時間</div><div id="detail-time" class="text-slate-600"></div></div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">起始日期</label>
+                    <input type="date" id="project-start-input" required class="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-base">
                 </div>
-                <div class="flex items-start text-slate-600">
-                    <i data-lucide="map-pin" class="w-4 h-4 mr-2.5 mt-0.5 text-slate-400 flex-shrink-0"></i>
-                    <div><div class="font-medium text-slate-800">集合地點</div><div id="detail-location"></div></div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">終止日期</label>
+                    <input type="date" id="project-end-input" required class="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-base">
                 </div>
-                <div class="flex items-start text-slate-600">
-                    <i data-lucide="phone" class="w-4 h-4 mr-2.5 mt-0.5 text-slate-400 flex-shrink-0"></i>
-                    <div><div class="font-medium text-slate-800">聯絡資料</div><div id="detail-contact" class="text-slate-600"></div></div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">初始參與人員 (用逗號分隔)</label>
+                <input type="text" id="project-members-input" class="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-base" placeholder="Alice, Bob, Charlie">
+            </div>
+            <div class="flex justify-end space-x-2 pt-2">
+                <button type="button" onclick="closeModal('new-project-modal')" class="px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg">取消</button>
+                <button type="submit" class="px-4 py-2.5 text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg">建立專案</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Add/Edit Activity -->
+<div id="activity-modal" class="modal-outer fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-0 sm:p-4">
+    <div class="modal-box bg-white rounded-2xl shadow-xl max-w-lg w-full p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
+        <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+            <h3 id="activity-modal-title" class="text-base sm:text-lg font-bold text-slate-900">新增活動</h3>
+            <button onclick="closeModal('activity-modal')" class="text-slate-400 hover:text-slate-600 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+        <div class="sm:hidden w-10 h-1 bg-slate-200 rounded-full mx-auto -mt-2 mb-1"></div>
+        <form id="activity-form" onsubmit="handleSaveActivity(event)" class="space-y-4">
+            <input type="hidden" id="act-id">
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">活動名稱</label>
+                <input type="text" id="act-name" required class="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-base" placeholder="例：淺草寺參觀">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">開始時間</label>
+                    <input type="datetime-local" id="act-start" required class="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-base">
                 </div>
-                <div class="flex items-start text-slate-600">
-                    <i data-lucide="users" class="w-4 h-4 mr-2.5 mt-0.5 text-slate-400 flex-shrink-0"></i>
-                    <div><div class="font-medium text-slate-800 mb-1">參與人員</div><div id="detail-participants" class="flex flex-wrap gap-1.5"></div></div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">結束時間</label>
+                    <input type="datetime-local" id="act-end" required class="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-base">
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">參與人員 (可多選)</label>
+                <div id="act-participants-checkboxes" class="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto p-2 border border-slate-200 rounded-lg"></div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">集合地點</label>
+                    <input type="text" id="act-location" class="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-base" placeholder="例：雷門前">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">聯絡資料</label>
+                    <input type="text" id="act-contact" class="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-base" placeholder="例：090-1234-5678">
+                </div>
+            </div>
+            <div class="flex items-center justify-between pt-1">
+                <div class="flex items-center space-x-2">
+                    <input type="checkbox" id="act-tentative" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
+                    <label for="act-tentative" class="text-sm font-medium text-slate-700">標記為擬訂行程</label>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <label class="text-sm font-medium text-slate-700">顏色</label>
+                    <input type="color" id="act-color" value="#3b82f6" class="w-9 h-9 rounded border-0 cursor-pointer">
                 </div>
             </div>
             <div class="flex justify-end space-x-2 pt-4 border-t border-slate-100">
-                <button id="detail-edit-btn" class="px-4 py-2.5 text-sm font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg flex items-center">
-                    <i data-lucide="edit-2" class="w-4 h-4 mr-1"></i>編輯
-                </button>
-                <button onclick="closeModal('activity-detail-modal')" class="px-4 py-2.5 text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg">關閉</button>
+                <button type="button" onclick="closeModal('activity-modal')" class="px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg">取消</button>
+                <button type="submit" class="px-4 py-2.5 text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg">儲存活動</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: View Activity Detail -->
+<div id="activity-detail-modal" class="modal-outer fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-0 sm:p-4">
+    <div class="modal-box bg-white rounded-2xl shadow-xl max-w-md w-full p-5 sm:p-6 space-y-4">
+        <div class="flex justify-between items-start border-b border-slate-100 pb-3">
+            <div>
+                <span id="detail-tentative-tag" class="hidden text-xs font-semibold px-2 py-0.5 rounded bg-amber-100 text-amber-800 mb-1 inline-block">擬訂中</span>
+                <h3 id="detail-title" class="text-lg sm:text-xl font-bold text-slate-900"></h3>
+            </div>
+            <button onclick="closeModal('activity-detail-modal')" class="text-slate-400 hover:text-slate-600 p-1 flex-shrink-0"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+        <div class="sm:hidden w-10 h-1 bg-slate-200 rounded-full mx-auto -mt-2 mb-1"></div>
+        <div class="space-y-3 text-sm">
+            <div class="flex items-start text-slate-600">
+                <i data-lucide="clock" class="w-4 h-4 mr-2.5 mt-0.5 text-slate-400 flex-shrink-0"></i>
+                <div><div class="font-medium text-slate-800">時間</div><div id="detail-time"></div></div>
+            </div>
+            <div class="flex items-start text-slate-600">
+                <i data-lucide="map-pin" class="w-4 h-4 mr-2.5 mt-0.5 text-slate-400 flex-shrink-0"></i>
+                <div><div class="font-medium text-slate-800">集合地點</div><div id="detail-location"></div></div>
+            </div>
+            <div class="flex items-start text-slate-600">
+                <i data-lucide="phone" class="w-4 h-4 mr-2.5 mt-0.5 text-slate-400 flex-shrink-0"></i>
+                <div><div class="font-medium text-slate-800">聯絡資料</div><div id="detail-contact"></div></div>
+            </div>
+            <div class="flex items-start text-slate-600">
+                <i data-lucide="users" class="w-4 h-4 mr-2.5 mt-0.5 text-slate-400 flex-shrink-0"></i>
+                <div><div class="font-medium text-slate-800 mb-1">參與人員</div><div id="detail-participants" class="flex flex-wrap gap-1.5"></div></div>
             </div>
         </div>
-    </div>
-
-    <!-- Modal: Add Person -->
-    <div id="add-person-modal" class="modal-outer fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-0 sm:p-4">
-        <div class="modal-box bg-white rounded-2xl shadow-xl max-w-sm w-full p-5 sm:p-6 space-y-4">
-            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-                <h3 class="text-base sm:text-lg font-bold text-slate-900">新增成員</h3>
-                <button onclick="closeModal('add-person-modal')" class="text-slate-400 hover:text-slate-600 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
-            </div>
-            <div class="sm:hidden w-10 h-1 bg-slate-200 rounded-full mx-auto -mt-2 mb-1"></div>
-            <form onsubmit="handleAddPerson(event)" class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">成員姓名</label>
-                    <input type="text" id="person-name-input" required class="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-base" placeholder="例：David">
-                </div>
-                <div class="flex items-center justify-between">
-                    <label class="text-sm font-medium text-slate-700">代表顏色</label>
-                    <input type="color" id="person-color-input" value="#10b981" class="w-9 h-9 rounded border-0 cursor-pointer">
-                </div>
-                <div class="flex justify-end space-x-2 pt-2">
-                    <button type="button" onclick="closeModal('add-person-modal')" class="px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg">取消</button>
-                    <button type="submit" class="px-4 py-2.5 text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg">新增</button>
-                </div>
-            </form>
+        <div class="flex justify-end space-x-2 pt-4 border-t border-slate-100">
+            <button id="detail-edit-btn" class="px-4 py-2.5 text-sm font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg flex items-center">
+                <i data-lucide="edit-2" class="w-4 h-4 mr-1"></i>編輯
+            </button>
+            <button onclick="closeModal('activity-detail-modal')" class="px-4 py-2.5 text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg">關閉</button>
         </div>
     </div>
+</div>
 
-    <script>
-        // ══════════════════════════════════════════════════════════════════
-        //  資料結構說明（修正多用戶跳轉問題的核心設計）
-        //
-        //  雲端 Firestore 只存：{ projects: [...] }
-        //    → 純粹的行程資料，不含任何「誰在看哪個專案」的狀態
-        //
-        //  本地 localStorage 只存：{ currentProjectId, timelineSelectedDate }
-        //    → 每個使用者自己的 UI 狀態，完全獨立，互不干擾
-        //
-        //  這樣 B 切換專案時，只有 B 自己的 localStorage 被改動，
-        //  A 的頁面收到 onSnapshot 時只更新 projects 內容，
-        //  不會動到 A 自己的 currentProjectId，所以不會跳轉。
-        // ══════════════════════════════════════════════════════════════════
+<!-- Modal: Add Person -->
+<div id="add-person-modal" class="modal-outer fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-0 sm:p-4">
+    <div class="modal-box bg-white rounded-2xl shadow-xl max-w-sm w-full p-5 sm:p-6 space-y-4">
+        <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+            <h3 class="text-base sm:text-lg font-bold text-slate-900">新增成員</h3>
+            <button onclick="closeModal('add-person-modal')" class="text-slate-400 hover:text-slate-600 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
+        </div>
+        <div class="sm:hidden w-10 h-1 bg-slate-200 rounded-full mx-auto -mt-2 mb-1"></div>
+        <form onsubmit="handleAddPerson(event)" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">成員姓名</label>
+                <input type="text" id="person-name-input" required class="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-base" placeholder="例：David">
+            </div>
+            <div class="flex items-center justify-between">
+                <label class="text-sm font-medium text-slate-700">代表顏色</label>
+                <input type="color" id="person-color-input" value="#10b981" class="w-9 h-9 rounded border-0 cursor-pointer">
+            </div>
+            <div class="flex justify-end space-x-2 pt-2">
+                <button type="button" onclick="closeModal('add-person-modal')" class="px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg">取消</button>
+                <button type="submit" class="px-4 py-2.5 text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg">新增</button>
+            </div>
+        </form>
+    </div>
+</div>
 
-        // ─── 預設專案資料（雲端無資料時使用） ────────────────────────────
-        const DEFAULT_PROJECTS = [
-            {
-                id: "p1",
-                name: "東京 5 天 4 夜自由行",
-                startDate: "2026-09-10",
-                endDate: "2026-09-14",
-                personnel: [
-                    { id: "u1", name: "Alice",   color: "#ef4444" },
-                    { id: "u2", name: "Bob",     color: "#3b82f6" },
-                    { id: "u3", name: "Charlie", color: "#10b981" },
-                    { id: "u4", name: "Diana",   color: "#f59e0b" }
-                ],
-                activities: [
-                    { id: "a1",   name: "抵達特快 N'EX 抵達東京",   participants: ["u1","u2","u3","u4"], start: "2026-09-10T09:00", end: "2026-09-10T11:30", location: "成田機場 第一航廈",      contact: "JR 服務中心 +81 50-2016-1600", isTentative: false, color: "#3b82f6" },
-                    { id: "a2",   name: "飯店 Check-in & 寄放行李", participants: ["u1","u2"],           start: "2026-09-10T12:30", end: "2026-09-10T13:30", location: "新宿格拉斯麗飯店",      contact: "櫃檯 +81 3-6833-1111",        isTentative: false, color: "#6366f1" },
-                    { id: "a2_b", name: "秋葉原動漫巡禮 (B組)",     participants: ["u3","u4"],           start: "2026-09-10T12:30", end: "2026-09-10T15:00", location: "秋葉原站",              contact: "",                            isTentative: false, color: "#ec4899" },
-                    { id: "a3",   name: "淺草寺參觀與周邊美食",     participants: ["u1","u2","u3","u4"], start: "2026-09-10T15:30", end: "2026-09-10T17:30", location: "淺草寺 雷門",           contact: "",                            isTentative: false, color: "#f59e0b" },
-                    { id: "a4",   name: "晴空塔夜景觀賞",           participants: ["u3","u4"],           start: "2026-09-10T18:30", end: "2026-09-10T21:00", location: "東京晴空塔",            contact: "客服 +81 570-55-0634",        isTentative: true,  color: "#8b5cf6" },
-                    { id: "a4_b", name: "澀谷 Sky & 購物",          participants: ["u1","u2"],           start: "2026-09-10T18:00", end: "2026-09-10T21:00", location: "澀谷 Scramble Square", contact: "",                            isTentative: false, color: "#06b6d4" },
-                    { id: "a5",   name: "東京迪士尼樂園全日遊",     participants: ["u1","u2","u3","u4"], start: "2026-09-11T08:00", end: "2026-09-11T20:00", location: "東京迪士尼樂園大門",    contact: "",                            isTentative: false, color: "#10b981" }
-                ]
-            }
-        ];
+<!-- ══════════════════════════════════════════
+     BillSplitter Modals
+══════════════════════════════════════════ -->
 
-        // ─── 雲端狀態（共享，只含 projects） ─────────────────────────────
-        let cloudProjects = JSON.parse(JSON.stringify(DEFAULT_PROJECTS));
+<!-- BS Modal: 新增單據 -->
+<div class="bs-modal-overlay" id="bs-bill-modal">
+    <div class="bs-modal">
+        <div class="bs-modal-header">
+            <h3 id="bs-bill-modal-title">新增單據</h3>
+            <button class="bs-btn bs-btn-outline bs-btn-sm" onclick="bsCloseModal('bs-bill-modal')">✕</button>
+        </div>
+        <input type="hidden" id="bs-editing-bill-id">
+        <div class="bs-form-group">
+            <label>單據名稱</label>
+            <input type="text" id="bs-bill-title" class="bs-form-control" placeholder="例如：晚餐、計程車">
+        </div>
+        <div class="bs-form-group">
+            <label>付款人</label>
+            <select id="bs-bill-payer" class="bs-form-control"></select>
+        </div>
+        <div class="bs-form-group">
+            <label>分攤模式</label>
+            <div class="bs-toggle-group" style="width:100%">
+                <button class="bs-toggle-btn active" id="bs-btn-mode-equal" style="flex:1" onclick="bsSetBillMode('equal')">均分模式</button>
+                <button class="bs-toggle-btn" id="bs-btn-mode-custom" style="flex:1" onclick="bsSetBillMode('custom')">指定模式</button>
+            </div>
+        </div>
+        <div id="bs-equal-mode-area">
+            <div class="bs-form-group">
+                <label>總金額 (元)</label>
+                <input type="number" id="bs-bill-total-amount" class="bs-form-control" placeholder="0">
+            </div>
+            <div class="bs-form-group">
+                <label>欠款人與均分前扣除額 (元)</label>
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;padding:6px 8px;background:#f8fafc;border-radius:6px;border:1px solid #e2e8f0">
+                    <input type="checkbox" id="bs-select-all-cb" style="width:16px;height:16px;cursor:pointer" onchange="bsToggleSelectAll(this.checked)">
+                    <label for="bs-select-all-cb" style="font-size:.88rem;font-weight:600;cursor:pointer;user-select:none;margin:0">全選／取消全選</label>
+                </div>
+                <div id="bs-equal-debtors-list"></div>
+            </div>
+        </div>
+        <div id="bs-custom-mode-area" style="display:none">
+            <div class="bs-form-group">
+                <label>指定各人債務金額 (元)</label>
+                <div id="bs-custom-debtors-list"></div>
+            </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:16px">
+            <button class="bs-btn" style="flex:1" onclick="bsSaveBill()">儲存單據</button>
+            <button class="bs-btn bs-btn-danger" id="bs-btn-delete-bill" style="display:none" onclick="bsDeleteCurrentBill()">刪除</button>
+        </div>
+    </div>
+</div>
 
-        // ─── 本地狀態（每個使用者獨立，存 localStorage） ─────────────────
-        let localState = {
-            currentProjectId:    "p1",
-            timelineSelectedDate: "ALL"
-        };
+<!-- BS Modal: 單據明細 -->
+<div class="bs-modal-overlay" id="bs-view-bill-modal">
+    <div class="bs-modal">
+        <div class="bs-modal-header">
+            <h3 id="bs-view-bill-title">單據明細</h3>
+            <button class="bs-btn bs-btn-outline bs-btn-sm" onclick="bsCloseModal('bs-view-bill-modal')">✕</button>
+        </div>
+        <div id="bs-view-bill-content" style="margin-bottom:16px;font-size:.95rem;line-height:1.6"></div>
+        <div style="display:flex;gap:8px">
+            <button class="bs-btn bs-btn-outline" style="flex:1" onclick="bsOpenEditBillModal()">修改</button>
+            <button class="bs-btn bs-btn-danger" onclick="bsDeleteCurrentBill()">刪除</button>
+        </div>
+    </div>
+</div>
 
-        // 讀取本地狀態
-        function loadLocalState() {
-            try {
-                const saved = localStorage.getItem("trip_planner_local");
-                if (saved) {
-                    const parsed = JSON.parse(saved);
-                    localState.currentProjectId     = parsed.currentProjectId     || "p1";
-                    localState.timelineSelectedDate = parsed.timelineSelectedDate || "ALL";
-                }
-            } catch (e) { /* 忽略 */ }
-        }
+<!-- ══════════════════════════════════════════
+     JavaScript
+══════════════════════════════════════════ -->
+<script>
+// ════════════════════════════════════════════════════════════════
+//  資料層
+// ════════════════════════════════════════════════════════════════
+const DEFAULT_PROJECTS = [{
+    id:"p1", name:"東京 5 天 4 夜自由行", startDate:"2026-09-10", endDate:"2026-09-14",
+    personnel:[
+        {id:"u1",name:"Alice",color:"#ef4444"},{id:"u2",name:"Bob",color:"#3b82f6"},
+        {id:"u3",name:"Charlie",color:"#10b981"},{id:"u4",name:"Diana",color:"#f59e0b"}
+    ],
+    activities:[
+        {id:"a1",name:"抵達特快 N'EX 抵達東京",participants:["u1","u2","u3","u4"],start:"2026-09-10T09:00",end:"2026-09-10T11:30",location:"成田機場 第一航廈",contact:"JR 服務中心 +81 50-2016-1600",isTentative:false,color:"#3b82f6"},
+        {id:"a2",name:"飯店 Check-in & 寄放行李",participants:["u1","u2"],start:"2026-09-10T12:30",end:"2026-09-10T13:30",location:"新宿格拉斯麗飯店",contact:"櫃檯 +81 3-6833-1111",isTentative:false,color:"#6366f1"},
+        {id:"a2_b",name:"秋葉原動漫巡禮 (B組)",participants:["u3","u4"],start:"2026-09-10T12:30",end:"2026-09-10T15:00",location:"秋葉原站",contact:"",isTentative:false,color:"#ec4899"},
+        {id:"a3",name:"淺草寺參觀與周邊美食",participants:["u1","u2","u3","u4"],start:"2026-09-10T15:30",end:"2026-09-10T17:30",location:"淺草寺 雷門",contact:"",isTentative:false,color:"#f59e0b"},
+        {id:"a4",name:"晴空塔夜景觀賞",participants:["u3","u4"],start:"2026-09-10T18:30",end:"2026-09-10T21:00",location:"東京晴空塔",contact:"客服 +81 570-55-0634",isTentative:true,color:"#8b5cf6"},
+        {id:"a4_b",name:"澀谷 Sky & 購物",participants:["u1","u2"],start:"2026-09-10T18:00",end:"2026-09-10T21:00",location:"澀谷 Scramble Square",contact:"",isTentative:false,color:"#06b6d4"},
+        {id:"a5",name:"東京迪士尼樂園全日遊",participants:["u1","u2","u3","u4"],start:"2026-09-11T08:00",end:"2026-09-11T20:00",location:"東京迪士尼樂園大門",contact:"",isTentative:false,color:"#10b981"}
+    ]
+}];
 
-        // 儲存本地狀態
-        function saveLocalState() {
-            localStorage.setItem("trip_planner_local", JSON.stringify(localState));
-        }
+let cloudProjects = JSON.parse(JSON.stringify(DEFAULT_PROJECTS));
+let cloudBills    = {};
+let localState    = { currentProjectId:"p1", timelineSelectedDate:"ALL", currentApp:"trip" };
 
-        // ─── 取得當前專案（從 cloudProjects 查找） ───────────────────────
-        function getCurrentProject() {
-            // 若本地記錄的 id 在雲端已不存在（被其他人刪除），自動切到第一個
-            const found = cloudProjects.find(p => p.id === localState.currentProjectId);
-            if (!found && cloudProjects.length > 0) {
-                localState.currentProjectId = cloudProjects[0].id;
-                saveLocalState();
-                return cloudProjects[0];
-            }
-            return found || cloudProjects[0];
-        }
+function loadLocalState(){
+    try{ const s=localStorage.getItem("unified_local"); if(s) Object.assign(localState,JSON.parse(s)); }catch(e){}
+}
+function saveLocalState(){ localStorage.setItem("unified_local",JSON.stringify(localState)); }
 
-        // ─── 同步狀態 UI ──────────────────────────────────────────────────
-        function setSyncStatus(status) {
-            const dot  = document.getElementById("sync-dot");
-            const text = document.getElementById("sync-text");
-            const map  = {
-                connecting: { cls: "bg-slate-300",               label: "連線中..."  },
-                synced:     { cls: "bg-green-400",               label: "已同步"     },
-                saving:     { cls: "bg-amber-400 animate-pulse", label: "儲存中..."  },
-                error:      { cls: "bg-red-400",                 label: "離線模式"   }
-            };
-            const s = map[status] || map.connecting;
-            dot.className    = `w-2 h-2 rounded-full flex-shrink-0 ${s.cls}`;
-            text.textContent = s.label;
-        }
+let _currentApp = "trip";
+let _currentTab = "timeline";
 
-        // ─── Firebase 資料層 ──────────────────────────────────────────────
-        let _isSaving    = false;
-        let _unsubscribe = null;
+function getCurrentProject(){
+    const found=cloudProjects.find(p=>p.id===localState.currentProjectId);
+    if(!found&&cloudProjects.length>0){ localState.currentProjectId=cloudProjects[0].id; saveLocalState(); return cloudProjects[0]; }
+    return found||cloudProjects[0];
+}
 
-        function getDocRef() {
-            return window._fsDoc(window._db, "tripplanner", "shared");
-        }
+// ════════════════════════════════════════════════════════════════
+//  Logo 翻轉 / App 切換
+// ════════════════════════════════════════════════════════════════
+function toggleApp(){
+    _currentApp = _currentApp==="trip" ? "bill" : "trip";
+    localState.currentApp = _currentApp;
+    saveLocalState();
+    applyAppUI();
+}
 
-        // 只把 projects 陣列存到雲端
-        async function saveData() {
-            if (!window._firebaseReady) {
-                localStorage.setItem("trip_planner_projects_backup", JSON.stringify(cloudProjects));
-                return;
-            }
-            try {
-                setSyncStatus("saving");
-                _isSaving = true;
-                await window._fsSetDoc(getDocRef(), { projects: cloudProjects });
-                setSyncStatus("synced");
-            } catch (e) {
-                console.error("Firestore 儲存失敗", e);
-                setSyncStatus("error");
-                localStorage.setItem("trip_planner_projects_backup", JSON.stringify(cloudProjects));
-            } finally {
-                setTimeout(() => { _isSaving = false; }, 800);
-            }
-        }
+function applyAppUI(){
+    const isTrip = _currentApp==="trip";
+    document.getElementById("logoFlipInner").classList.toggle("flipped",!isTrip);
+    document.getElementById("app-trip").classList.toggle("hidden",!isTrip);
+    document.getElementById("app-bill").classList.toggle("hidden",isTrip);
+    document.getElementById("desktop-tabs").style.display = isTrip ? "" : "none";
+    document.getElementById("mobile-bottom-nav").style.display = isTrip ? "" : "none";
+    document.title = isTrip ? "TripPlanner" : "BillSplitter";
+    updateFabVisibility();
+    if(!isTrip) bsRenderApp();
+}
 
-        // 初始化雲端同步
-        async function initCloudSync() {
-            setSyncStatus("connecting");
-            loadLocalState();
+// ════════════════════════════════════════════════════════════════
+//  FAB 顯示控制
+//  - TripPlanner 時程圖 Tab：顯示 fab-add-activity
+//  - BillSplitter：顯示 fab-add-bill
+//  - 其他情況：全隱藏
+//  - 桌面版（≥768px）：全隱藏（由 CSS media query 控制）
+// ════════════════════════════════════════════════════════════════
+function updateFabVisibility(){
+    const fabActivity = document.getElementById("fab-add-activity");
+    const fabBill     = document.getElementById("fab-add-bill");
+    // 先全隱藏（JS 層），CSS media query 會在桌面版強制 display:none
+    fabActivity.style.display = "none";
+    fabBill.style.display     = "none";
 
-            try {
-                const docRef = getDocRef();
-                const snap   = await window._fsGetDoc(docRef);
+    if(_currentApp === "trip" && _currentTab === "timeline"){
+        // 讓 CSS media query 決定是否顯示（手機才顯示）
+        fabActivity.style.display = "";
+    } else if(_currentApp === "bill"){
+        fabBill.style.display = "";
+    }
+}
 
-                if (snap.exists() && snap.data().projects) {
-                    cloudProjects = snap.data().projects;
-                } else {
-                    // 雲端無資料，寫入預設
-                    await window._fsSetDoc(docRef, { projects: cloudProjects });
-                }
+// ════════════════════════════════════════════════════════════════
+//  同步狀態 UI
+// ════════════════════════════════════════════════════════════════
+function setSyncStatus(s){
+    const dot=document.getElementById("sync-dot"),text=document.getElementById("sync-text");
+    const m={connecting:{cls:"bg-slate-300",label:"連線中..."},synced:{cls:"bg-green-400",label:"已同步"},saving:{cls:"bg-amber-400 animate-pulse",label:"儲存中..."},error:{cls:"bg-red-400",label:"離線模式"}};
+    const v=m[s]||m.connecting;
+    dot.className=`w-2 h-2 rounded-full flex-shrink-0 ${v.cls}`; text.textContent=v.label;
+}
 
-                // 確保本地記錄的 projectId 仍然有效
-                getCurrentProject();
+// ════════════════════════════════════════════════════════════════
+//  Firebase 資料層
+// ════════════════════════════════════════════════════════════════
+let _isSaving=false, _unsubscribe=null;
+function getTripDocRef(){ return window._fsDoc(window._db,"tripplanner","shared"); }
+function getBillDocRef(){ return window._fsDoc(window._db,"tripplanner","bills"); }
 
-                setSyncStatus("synced");
-                document.getElementById("loading-overlay").classList.add("hidden");
-                renderProjectSelector();
-                loadProject();
-                lucide.createIcons();
+async function saveData(){
+    if(!window._firebaseReady){
+        localStorage.setItem("trip_projects_bk",JSON.stringify(cloudProjects));
+        localStorage.setItem("trip_bills_bk",JSON.stringify(cloudBills));
+        return;
+    }
+    try{
+        setSyncStatus("saving"); _isSaving=true;
+        await Promise.all([
+            window._fsSetDoc(getTripDocRef(),{projects:cloudProjects}),
+            window._fsSetDoc(getBillDocRef(),{bills:cloudBills})
+        ]);
+        setSyncStatus("synced");
+    }catch(e){
+        console.error("Firestore 儲存失敗",e); setSyncStatus("error");
+        localStorage.setItem("trip_projects_bk",JSON.stringify(cloudProjects));
+        localStorage.setItem("trip_bills_bk",JSON.stringify(cloudBills));
+    }finally{ setTimeout(()=>{_isSaving=false;},800); }
+}
 
-                // 即時監聽：只更新 projects 內容，不動本地 UI 狀態
-                _unsubscribe = window._fsOnSnapshot(docRef, (snapshot) => {
-                    if (_isSaving) return;
-                    if (!snapshot.exists() || !snapshot.data().projects) return;
+async function initCloudSync(){
+    setSyncStatus("connecting"); loadLocalState();
+    _currentApp=localState.currentApp||"trip";
+    try{
+        const [tripSnap,billSnap]=await Promise.all([window._fsGetDoc(getTripDocRef()),window._fsGetDoc(getBillDocRef())]);
+        if(tripSnap.exists()&&tripSnap.data().projects) cloudProjects=tripSnap.data().projects;
+        else await window._fsSetDoc(getTripDocRef(),{projects:cloudProjects});
+        if(billSnap.exists()&&billSnap.data().bills) cloudBills=billSnap.data().bills;
+        else await window._fsSetDoc(getBillDocRef(),{bills:cloudBills});
+        getCurrentProject();
+        setSyncStatus("synced");
+        document.getElementById("loading-overlay").classList.add("hidden");
+        renderProjectSelector(); loadProject(); applyAppUI(); lucide.createIcons();
 
-                    const remoteProjects = snapshot.data().projects;
-
-                    // 記住目前正在看的專案 id（本地狀態，不受影響）
-                    const viewingId = localState.currentProjectId;
-
-                    // 更新雲端資料
-                    cloudProjects = remoteProjects;
-
-                    // 若目前在看的專案被其他人刪除了，才切換（並提示）
-                    const stillExists = cloudProjects.find(p => p.id === viewingId);
-                    if (!stillExists && cloudProjects.length > 0) {
-                        localState.currentProjectId = cloudProjects[0].id;
-                        saveLocalState();
-                        showToast("你正在查看的專案已被刪除，已自動切換到其他專案。");
-                    }
-
-                    // 重新渲染（保持在同一個專案、同一個 Tab）
-                    renderProjectSelector();
-                    refreshCurrentView();
-                    setSyncStatus("synced");
-                });
-
-            } catch (e) {
-                console.error("Firestore 初始化失敗，切換到離線模式", e);
-                setSyncStatus("error");
-                document.getElementById("loading-overlay").classList.add("hidden");
-
-                // 備援：從 localStorage 讀取
-                try {
-                    const backup = localStorage.getItem("trip_planner_projects_backup");
-                    if (backup) cloudProjects = JSON.parse(backup);
-                } catch (_) {}
-
-                loadLocalState();
-                getCurrentProject();
-                renderProjectSelector();
-                loadProject();
-                lucide.createIcons();
-            }
-        }
-
-        // ─── 初始化 ───────────────────────────────────────────────────────
-        document.addEventListener("DOMContentLoaded", () => {
-            if (window._firebaseReady) {
-                initCloudSync();
-            } else {
-                window.addEventListener("firebase-ready", initCloudSync, { once: true });
-                setTimeout(() => {
-                    if (!window._firebaseReady) {
-                        console.warn("Firebase 載入逾時，切換到離線模式");
-                        setSyncStatus("error");
-                        document.getElementById("loading-overlay").classList.add("hidden");
-                        loadLocalState();
-                        renderProjectSelector();
-                        loadProject();
-                        lucide.createIcons();
-                    }
-                }, 5000);
-            }
+        _unsubscribe=window._fsOnSnapshot(getTripDocRef(),(snap)=>{
+            if(_isSaving||!snap.exists()||!snap.data().projects) return;
+            const viewingId=localState.currentProjectId;
+            cloudProjects=snap.data().projects;
+            const still=cloudProjects.find(p=>p.id===viewingId);
+            if(!still&&cloudProjects.length>0){ localState.currentProjectId=cloudProjects[0].id; saveLocalState(); showToast("你正在查看的專案已被刪除，已自動切換。"); }
+            renderProjectSelector(); refreshCurrentView(); setSyncStatus("synced");
         });
+        window._fsOnSnapshot(getBillDocRef(),(snap)=>{
+            if(_isSaving||!snap.exists()||!snap.data().bills) return;
+            cloudBills=snap.data().bills;
+            if(_currentApp==="bill") bsRenderApp();
+        });
+    }catch(e){
+        console.error("Firestore 初始化失敗",e); setSyncStatus("error");
+        document.getElementById("loading-overlay").classList.add("hidden");
+        try{ const b=localStorage.getItem("trip_projects_bk"); if(b) cloudProjects=JSON.parse(b); }catch(_){}
+        try{ const b=localStorage.getItem("trip_bills_bk"); if(b) cloudBills=JSON.parse(b); }catch(_){}
+        loadLocalState(); getCurrentProject();
+        renderProjectSelector(); loadProject(); applyAppUI(); lucide.createIcons();
+    }
+}
 
-        // ─── Toast 提示 ───────────────────────────────────────────────────
-        function showToast(msg) {
-            const t = document.createElement("div");
-            t.className = "fixed bottom-20 sm:bottom-6 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-sm px-4 py-2.5 rounded-xl shadow-lg z-[100] whitespace-nowrap";
-            t.textContent = msg;
-            document.body.appendChild(t);
-            setTimeout(() => t.remove(), 4000);
-        }
+document.addEventListener("DOMContentLoaded",()=>{
+    if(window._firebaseReady){ initCloudSync(); }
+    else{
+        window.addEventListener("firebase-ready",initCloudSync,{once:true});
+        setTimeout(()=>{
+            if(!window._firebaseReady){
+                setSyncStatus("error");
+                document.getElementById("loading-overlay").classList.add("hidden");
+                loadLocalState(); _currentApp=localState.currentApp||"trip";
+                renderProjectSelector(); loadProject(); applyAppUI(); lucide.createIcons();
+            }
+        },5000);
+    }
+});
 
-        // ─── 目前 Tab 名稱（用於 onSnapshot 後刷新正確的 Tab） ───────────
-        let _currentTab = "timeline";
+// ════════════════════════════════════════════════════════════════
+//  Toast
+// ════════════════════════════════════════════════════════════════
+function showToast(msg){
+    const t=document.createElement("div");
+    t.className="fixed bottom-20 sm:bottom-6 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-sm px-4 py-2.5 rounded-xl shadow-lg z-[100] whitespace-nowrap";
+    t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),4000);
+}
 
-        function refreshCurrentView() {
-            if (_currentTab === "timeline")   renderTimeline();
-            if (_currentTab === "activities") renderActivitiesTable();
-            if (_currentTab === "personnel")  renderPersonnelList();
-            // 同步更新 Banner
-            const project = getCurrentProject();
-            if (!project) return;
-            document.getElementById("current-project-title").innerText = project.name;
-            document.getElementById("current-project-dates").innerHTML =
-                `<i data-lucide="calendar-days" class="w-3.5 h-3.5 mr-1 flex-shrink-0"></i><span>${project.startDate} 至 ${project.endDate}</span>`;
-            document.getElementById("current-project-members").innerHTML = project.personnel.map(m =>
-                `<div class="inline-flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-full text-white font-bold text-xs ring-2 ring-white" style="background-color: ${m.color}" title="${m.name}">${m.name.charAt(0).toUpperCase()}</div>`
-            ).join("");
-            lucide.createIcons();
-        }
+// ════════════════════════════════════════════════════════════════
+//  TripPlanner：Tab 切換
+// ════════════════════════════════════════════════════════════════
+function switchTab(tabName){
+    _currentTab=tabName;
+    document.querySelectorAll(".tab-content").forEach(el=>el.classList.add("hidden"));
+    document.querySelectorAll(".tab-btn").forEach(el=>{ el.classList.remove("text-indigo-600","bg-indigo-50"); el.classList.add("text-slate-600","hover:text-slate-900","hover:bg-slate-100"); });
+    const ab=document.getElementById(`tab-btn-${tabName}`);
+    if(ab){ ab.classList.remove("text-slate-600","hover:text-slate-900","hover:bg-slate-100"); ab.classList.add("text-indigo-600","bg-indigo-50"); }
+    document.querySelectorAll(".mob-tab-btn").forEach(el=>{ el.classList.remove("text-indigo-600"); el.classList.add("text-slate-400"); });
+    const mb=document.getElementById(`mob-btn-${tabName}`);
+    if(mb){ mb.classList.remove("text-slate-400"); mb.classList.add("text-indigo-600"); }
+    const at=document.getElementById(`tab-${tabName}`);
+    if(at) at.classList.remove("hidden");
+    if(tabName==="timeline") renderTimeline();
+    if(tabName==="activities") renderActivitiesTable();
+    if(tabName==="personnel") renderPersonnelList();
+    // ✅ 切換 Tab 後更新 FAB 顯示
+    updateFabVisibility();
+}
 
-        // ─── Tab 切換 ─────────────────────────────────────────────────────
-        function switchTab(tabName) {
-            _currentTab = tabName;
-            document.querySelectorAll(".tab-content").forEach(el => el.classList.add("hidden"));
+function refreshCurrentView(){
+    if(_currentTab==="timeline") renderTimeline();
+    if(_currentTab==="activities") renderActivitiesTable();
+    if(_currentTab==="personnel") renderPersonnelList();
+    const project=getCurrentProject(); if(!project) return;
+    document.getElementById("current-project-title").innerText=project.name;
+    document.getElementById("current-project-dates").innerHTML=`<i data-lucide="calendar-days" class="w-3.5 h-3.5 mr-1 flex-shrink-0"></i><span>${project.startDate} 至 ${project.endDate}</span>`;
+    document.getElementById("current-project-members").innerHTML=memberAvatars(project.personnel,"w-6 h-6 sm:w-7 sm:h-7");
+    lucide.createIcons();
+}
 
-            document.querySelectorAll(".tab-btn").forEach(el => {
-                el.classList.remove("text-indigo-600", "bg-indigo-50");
-                el.classList.add("text-slate-600", "hover:text-slate-900", "hover:bg-slate-100");
+// ════════════════════════════════════════════════════════════════
+//  共用：成員首字母圓框
+// ════════════════════════════════════════════════════════════════
+function memberAvatars(personnel,sizeClass="w-7 h-7"){
+    return personnel.map(m=>`<div class="inline-flex items-center justify-center ${sizeClass} rounded-full text-white font-bold text-xs ring-2 ring-white" style="background-color:${m.color}" title="${m.name}">${m.name.charAt(0).toUpperCase()}</div>`).join("");
+}
+function memberAvatar(person,sizeClass="w-6 h-6"){
+    if(!person) return "";
+    return `<div class="inline-flex items-center justify-center ${sizeClass} rounded-full text-white font-bold text-xs ring-1 ring-white flex-shrink-0" style="background-color:${person.color}">${person.name.charAt(0).toUpperCase()}</div>`;
+}
+
+// ════════════════════════════════════════════════════════════════
+//  TripPlanner：專案管理
+// ════════════════════════════════════════════════════════════════
+function renderProjectSelector(){
+    const select=document.getElementById("project-select");
+    select.innerHTML=cloudProjects.map(p=>`<option value="${p.id}" ${p.id===localState.currentProjectId?"selected":""}>${p.name}</option>`).join("");
+    select.onchange=(e)=>{ localState.currentProjectId=e.target.value; localState.timelineSelectedDate="ALL"; saveLocalState(); loadProject(); if(_currentApp==="bill") bsRenderApp(); };
+}
+
+function loadProject(){
+    const project=getCurrentProject(); if(!project) return;
+    document.getElementById("current-project-title").innerText=project.name;
+    document.getElementById("current-project-dates").innerHTML=`<i data-lucide="calendar-days" class="w-3.5 h-3.5 mr-1 flex-shrink-0"></i><span>${project.startDate} 至 ${project.endDate}</span>`;
+    document.getElementById("current-project-members").innerHTML=memberAvatars(project.personnel,"w-6 h-6 sm:w-7 sm:h-7");
+    renderTimeline(); renderActivitiesTable(); renderPersonnelList(); lucide.createIcons();
+}
+
+function openNewProjectModal(){ openModal("new-project-modal"); }
+
+function handleCreateProject(e){
+    e.preventDefault();
+    const name=document.getElementById("project-name-input").value;
+    const startDate=document.getElementById("project-start-input").value;
+    const endDate=document.getElementById("project-end-input").value;
+    const rawMembers=document.getElementById("project-members-input").value;
+    const memberNames=rawMembers?rawMembers.split(",").map(s=>s.trim()).filter(Boolean):["Alice","Bob"];
+    const colors=["#ef4444","#3b82f6","#10b981","#f59e0b","#8b5cf6","#ec4899"];
+    const personnel=memberNames.map((mName,idx)=>({id:"u_"+Date.now()+"_"+idx,name:mName,color:colors[idx%colors.length]}));
+    const newProj={id:"p_"+Date.now(),name,startDate,endDate,personnel,activities:[]};
+    cloudProjects.push(newProj);
+    localState.currentProjectId=newProj.id; localState.timelineSelectedDate="ALL"; saveLocalState();
+    saveData(); renderProjectSelector(); loadProject();
+    closeModal("new-project-modal"); document.getElementById("new-project-form").reset();
+}
+
+function handleDeleteCurrentProject(){
+    if(cloudProjects.length<=1){ alert("至少需要保留一個旅遊專案！"); return; }
+    const currentProj=getCurrentProject();
+    if(!confirm(`確定要刪除專案「${currentProj.name}」嗎？此操作無法復原。`)) return;
+    delete cloudBills[currentProj.id];
+    cloudProjects=cloudProjects.filter(p=>p.id!==currentProj.id);
+    localState.currentProjectId=cloudProjects[0].id; localState.timelineSelectedDate="ALL"; saveLocalState();
+    saveData(); renderProjectSelector(); loadProject();
+}
+
+// ════════════════════════════════════════════════════════════════
+//  TripPlanner：時程圖
+// ════════════════════════════════════════════════════════════════
+function renderTimeline(){
+    const project=getCurrentProject(); if(!project) return;
+    const filtersContainer=document.getElementById("timeline-date-filters");
+    const dates=[]; let curr=new Date(project.startDate); const stop=new Date(project.endDate);
+    while(curr<=stop){ dates.push(curr.toISOString().split("T")[0]); curr.setDate(curr.getDate()+1); }
+
+    let filterHtml=`<button onclick="setTimelineDate('ALL')" class="px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${localState.timelineSelectedDate==='ALL'?'bg-indigo-600 text-white':'bg-slate-100 text-slate-600 hover:bg-slate-200'}">全部(${dates.length}天)</button>`;
+    dates.forEach(d=>{ const sel=localState.timelineSelectedDate===d; filterHtml+=`<button onclick="setTimelineDate('${d}')" class="px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${sel?'bg-indigo-600 text-white':'bg-slate-100 text-slate-600 hover:bg-slate-200'}">${d.substring(5)}</button>`; });
+    filtersContainer.innerHTML=filterHtml;
+
+    const displayDates=localState.timelineSelectedDate==="ALL"?dates:[localState.timelineSelectedDate];
+    const filteredActivities=project.activities.filter(a=>displayDates.includes(a.start.split("T")[0]));
+
+    let minHour=8,maxHour=20;
+    if(filteredActivities.length>0){
+        let earliest=24,latest=0;
+        filteredActivities.forEach(a=>{ const sh=new Date(a.start).getHours(); const eh=new Date(a.end).getHours()+(new Date(a.end).getMinutes()>0?1:0); if(sh<earliest)earliest=sh; if(eh>latest)latest=eh; });
+        minHour=Math.max(0,Math.min(minHour,earliest)); maxHour=Math.min(24,Math.max(maxHour,latest));
+    }
+
+    const gridContainer=document.getElementById("timeline-grid");
+    let gridHtml=`<div class="grid" style="grid-template-columns:52px repeat(${displayDates.length},minmax(160px,1fr));">`;
+    gridHtml+=`<div class="p-2 bg-slate-50 border-b border-r border-slate-200 text-[10px] font-semibold text-slate-500 text-center sticky left-0 z-10">時間</div>`;
+    displayDates.forEach(d=>{ gridHtml+=`<div class="p-2 bg-slate-50 border-b border-r border-slate-200 text-xs font-bold text-slate-700 text-center">${d}</div>`; });
+    for(let h=minHour;h<maxHour;h++){
+        const hl=`${String(h).padStart(2,'0')}:00`;
+        gridHtml+=`<div class="h-14 sm:h-16 p-1 border-b border-r border-slate-100 text-[10px] font-mono text-slate-400 text-center relative bg-slate-50/50 sticky left-0 z-10 flex items-center justify-center">${hl}</div>`;
+        displayDates.forEach(d=>{ gridHtml+=`<div class="h-14 sm:h-16 border-b border-r border-slate-100 relative bg-white" id="cell-${d}-${h}"></div>`; });
+    }
+    gridHtml+=`</div>`; gridContainer.innerHTML=gridHtml;
+
+    const isMobile=window.innerWidth<768; const cellH=isMobile?56:64;
+
+    displayDates.forEach(d=>{
+        const dayActs=filteredActivities.filter(a=>a.start.split("T")[0]===d)
+            .map(a=>{ const sd=new Date(a.start),ed=new Date(a.end); return{...a,startH:sd.getHours()+sd.getMinutes()/60,endH:ed.getHours()+ed.getMinutes()/60}; })
+            .filter(a=>a.endH>minHour&&a.startH<maxHour)
+            .sort((a,b)=>a.startH-b.startH||(b.endH-b.startH)-(a.endH-a.startH));
+        if(dayActs.length===0) return;
+
+        let clusters=[],cc=[],ce=-1;
+        dayActs.forEach(act=>{ if(cc.length===0||act.startH<ce){ cc.push(act); if(act.endH>ce)ce=act.endH; }else{ clusters.push(cc); cc=[act]; ce=act.endH; } });
+        if(cc.length>0) clusters.push(cc);
+
+        clusters.forEach(cluster=>{
+            let tracks=[];
+            cluster.forEach(act=>{ let at=-1; for(let t=0;t<tracks.length;t++){ if(tracks[t]<=act.startH){at=t;tracks[t]=act.endH;break;} } if(at===-1){at=tracks.length;tracks.push(act.endH);} act.trackIndex=at; });
+            const tt=tracks.length;
+            cluster.forEach(act=>{
+                const sci=Math.floor(act.startH); const cell=document.getElementById(`cell-${d}-${sci}`); if(!cell) return;
+                const height=Math.max((act.endH-act.startH)*cellH,24);
+                const wp=100/tt; const lp=act.trackIndex*wp;
+                const block=document.createElement("div");
+                block.className=`absolute rounded-md sm:rounded-lg p-1.5 text-white shadow-sm cursor-pointer transition-all hover:scale-[1.02] hover:z-30 hover:shadow-md z-20 overflow-hidden flex flex-col justify-between ${act.isTentative?'bg-tentative border border-white/40':''}`;
+                block.style.top=`${(act.startH-sci)*cellH}px`; block.style.height=`${height}px`;
+                block.style.left=`calc(${lp}% + 2px)`; block.style.width=`calc(${wp}% - 4px)`;
+                block.style.backgroundColor=act.color||"#3b82f6";
+                block.onclick=(e)=>{ e.stopPropagation(); openActivityDetailModal(act.id); };
+                const partDots=act.participants.map(pid=>{ const p=project.personnel.find(p=>p.id===pid); if(!p) return ''; return `<span class="inline-flex items-center justify-center w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full text-[8px] sm:text-[9px] font-bold text-white ring-1 ring-white/50" style="background-color:${p.color}">${p.name.charAt(0).toUpperCase()}</span>`; }).join("");
+                block.innerHTML=`<div><div class="font-bold text-[10px] sm:text-xs truncate leading-tight">${act.name}</div><div class="text-[9px] sm:text-[10px] opacity-90 font-mono">${act.start.substring(11,16)}-${act.end.substring(11,16)}</div></div><div class="flex items-center space-x-0.5 mt-0.5">${partDots}</div>`;
+                cell.appendChild(block);
             });
-            const activeBtn = document.getElementById(`tab-btn-${tabName}`);
-            if (activeBtn) {
-                activeBtn.classList.remove("text-slate-600", "hover:text-slate-900", "hover:bg-slate-100");
-                activeBtn.classList.add("text-indigo-600", "bg-indigo-50");
-            }
+        });
+    });
+}
 
-            document.querySelectorAll(".mob-tab-btn").forEach(el => {
-                el.classList.remove("text-indigo-600");
-                el.classList.add("text-slate-400");
-            });
-            const activeMobBtn = document.getElementById(`mob-btn-${tabName}`);
-            if (activeMobBtn) {
-                activeMobBtn.classList.remove("text-slate-400");
-                activeMobBtn.classList.add("text-indigo-600");
-            }
+function setTimelineDate(d){ localState.timelineSelectedDate=d; saveLocalState(); renderTimeline(); }
 
-            const activeTab = document.getElementById(`tab-${tabName}`);
-            if (activeTab) activeTab.classList.remove("hidden");
+// ════════════════════════════════════════════════════════════════
+//  TripPlanner：活動清單
+// ════════════════════════════════════════════════════════════════
+function renderActivitiesTable(){
+    const project=getCurrentProject(); const tbody=document.getElementById("activities-table-body"); if(!project) return;
+    if(project.activities.length===0){ tbody.innerHTML=`<tr><td colspan="9" class="p-8 text-center text-slate-400 text-sm">目前尚無活動資料，點擊上方按鈕新增。</td></tr>`; return; }
+    tbody.innerHTML=project.activities.map(act=>{
+        const partBadges=act.participants.map(pid=>{ const p=project.personnel.find(p=>p.id===pid); if(!p) return ''; return `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium text-white" style="background-color:${p.color}">${p.name}</span>`; }).join(" ");
+        const mapsUrl=act.location?`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(act.location)}`:'#';
+        return `<tr class="hover:bg-slate-50 transition-colors">
+            <td class="p-3.5 font-semibold text-slate-800" data-label="活動">${act.name}</td>
+            <td class="p-3.5" data-label="人員"><div class="flex flex-wrap gap-1">${partBadges}</div></td>
+            <td class="p-3.5 font-mono text-xs text-slate-600" data-label="開始">${act.start.replace("T"," ")}</td>
+            <td class="p-3.5 font-mono text-xs text-slate-600" data-label="結束">${act.end.replace("T"," ")}</td>
+            <td class="p-3.5" data-label="地點">${act.location?`<a href="${mapsUrl}" target="_blank" class="text-indigo-600 hover:text-indigo-800 inline-flex items-center hover:underline"><i data-lucide="map-pin" class="w-3.5 h-3.5 mr-1"></i>${act.location}</a>`:'-'}</td>
+            <td class="p-3.5 text-slate-600 text-xs" data-label="聯絡">${act.contact||'-'}</td>
+            <td class="p-3.5 text-center" data-label="擬訂">${act.isTentative?`<span class="px-2 py-0.5 text-xs bg-amber-100 text-amber-800 rounded-full font-medium">是</span>`:`<span class="text-xs text-slate-400">否</span>`}</td>
+            <td class="p-3.5 text-center" data-label="顏色"><span class="inline-block w-5 h-5 rounded-full border border-slate-200" style="background-color:${act.color}"></span></td>
+            <td class="p-3.5 text-right space-x-1" data-label="">
+                <button onclick="openActivityModal('${act.id}')" class="p-1.5 text-slate-500 hover:text-indigo-600 rounded"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                <button onclick="deleteActivity('${act.id}')" class="p-1.5 text-slate-500 hover:text-red-600 rounded"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+            </td></tr>`;
+    }).join(""); lucide.createIcons();
+}
 
-            if (tabName === "timeline")   renderTimeline();
-            if (tabName === "activities") renderActivitiesTable();
-            if (tabName === "personnel")  renderPersonnelList();
+function openActivityModal(actId=null){
+    const project=getCurrentProject();
+    document.getElementById("activity-form").reset();
+    const container=document.getElementById("act-participants-checkboxes");
+    container.innerHTML=project.personnel.map(p=>`<label class="flex items-center space-x-2 text-sm text-slate-700 cursor-pointer py-0.5"><input type="checkbox" value="${p.id}" class="act-part-cb w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"><span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color:${p.color}"></span><span>${p.name}</span></label>`).join("");
+    if(actId){
+        const act=project.activities.find(a=>a.id===actId);
+        if(act){
+            document.getElementById("activity-modal-title").innerText="編輯活動";
+            document.getElementById("act-id").value=act.id; document.getElementById("act-name").value=act.name;
+            document.getElementById("act-start").value=act.start; document.getElementById("act-end").value=act.end;
+            document.getElementById("act-location").value=act.location||""; document.getElementById("act-contact").value=act.contact||"";
+            document.getElementById("act-tentative").checked=act.isTentative; document.getElementById("act-color").value=act.color||"#3b82f6";
+            document.querySelectorAll(".act-part-cb").forEach(cb=>{ cb.checked=act.participants.includes(cb.value); });
         }
+    }else{
+        document.getElementById("activity-modal-title").innerText="新增活動";
+        document.getElementById("act-id").value="";
+        document.getElementById("act-start").value=`${project.startDate}T09:00`;
+        document.getElementById("act-end").value=`${project.startDate}T10:00`;
+    }
+    openModal("activity-modal");
+}
 
-        // ─── 專案管理 ─────────────────────────────────────────────────────
-        function renderProjectSelector() {
-            const select = document.getElementById("project-select");
-            select.innerHTML = cloudProjects.map(p =>
-                `<option value="${p.id}" ${p.id === localState.currentProjectId ? "selected" : ""}>${p.name}</option>`
-            ).join("");
-            select.onchange = (e) => {
-                // 只改本地狀態，不寫雲端
-                localState.currentProjectId     = e.target.value;
-                localState.timelineSelectedDate = "ALL";
-                saveLocalState();
-                loadProject();
-            };
-        }
+function handleSaveActivity(e){
+    e.preventDefault(); const project=getCurrentProject(); const id=document.getElementById("act-id").value;
+    const sp=Array.from(document.querySelectorAll(".act-part-cb:checked")).map(cb=>cb.value);
+    const ad={id:id||"a_"+Date.now(),name:document.getElementById("act-name").value,start:document.getElementById("act-start").value,end:document.getElementById("act-end").value,participants:sp,location:document.getElementById("act-location").value,contact:document.getElementById("act-contact").value,isTentative:document.getElementById("act-tentative").checked,color:document.getElementById("act-color").value};
+    if(id){ const idx=project.activities.findIndex(a=>a.id===id); if(idx!==-1) project.activities[idx]=ad; }
+    else project.activities.push(ad);
+    saveData(); closeModal("activity-modal"); renderTimeline(); renderActivitiesTable();
+}
 
-        function loadProject() {
-            const project = getCurrentProject();
-            if (!project) return;
-            document.getElementById("current-project-title").innerText = project.name;
-            document.getElementById("current-project-dates").innerHTML =
-                `<i data-lucide="calendar-days" class="w-3.5 h-3.5 mr-1 flex-shrink-0"></i><span>${project.startDate} 至 ${project.endDate}</span>`;
-            document.getElementById("current-project-members").innerHTML = project.personnel.map(m =>
-                `<div class="inline-flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-full text-white font-bold text-xs ring-2 ring-white" style="background-color: ${m.color}" title="${m.name}">${m.name.charAt(0).toUpperCase()}</div>`
-            ).join("");
-            renderTimeline();
-            renderActivitiesTable();
-            renderPersonnelList();
-            lucide.createIcons();
-        }
+function deleteActivity(actId){
+    if(!confirm("確定要刪除此活動嗎？")) return;
+    const project=getCurrentProject(); project.activities=project.activities.filter(a=>a.id!==actId);
+    saveData(); renderTimeline(); renderActivitiesTable();
+}
 
-        function handleCreateProject(e) {
-            e.preventDefault();
-            const name       = document.getElementById("project-name-input").value;
-            const startDate  = document.getElementById("project-start-input").value;
-            const endDate    = document.getElementById("project-end-input").value;
-            const rawMembers = document.getElementById("project-members-input").value;
-            const memberNames = rawMembers ? rawMembers.split(",").map(s => s.trim()).filter(Boolean) : ["Alice", "Bob"];
-            const colors = ["#ef4444", "#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899"];
-            const personnel = memberNames.map((mName, idx) => ({
-                id: "u_" + Date.now() + "_" + idx, name: mName, color: colors[idx % colors.length]
-            }));
-            const newProj = { id: "p_" + Date.now(), name, startDate, endDate, personnel, activities: [] };
-            cloudProjects.push(newProj);
-            // 新建專案後，只有自己切換過去
-            localState.currentProjectId     = newProj.id;
-            localState.timelineSelectedDate = "ALL";
-            saveLocalState();
-            saveData();  // 把新專案寫到雲端
-            renderProjectSelector();
-            loadProject();
-            closeModal("new-project-modal");
-            document.getElementById("new-project-form").reset();
-        }
+function openActivityDetailModal(actId){
+    const project=getCurrentProject(); const act=project.activities.find(a=>a.id===actId); if(!act) return;
+    document.getElementById("detail-title").innerText=act.name;
+    document.getElementById("detail-time").innerText=`${act.start.replace("T"," ")} ~ ${act.end.replace("T"," ")}`;
+    const locEl=document.getElementById("detail-location");
+    if(act.location) locEl.innerHTML=`<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(act.location)}" target="_blank" class="text-indigo-600 hover:underline flex items-center">${act.location} <i data-lucide="external-link" class="w-3 h-3 ml-1"></i></a>`;
+    else locEl.innerText="未設定";
+    document.getElementById("detail-contact").innerText=act.contact||"無";
+    const tagEl=document.getElementById("detail-tentative-tag");
+    act.isTentative?tagEl.classList.remove("hidden"):tagEl.classList.add("hidden");
+    const partsEl=document.getElementById("detail-participants");
+    partsEl.innerHTML=act.participants.map(pid=>{ const p=project.personnel.find(x=>x.id===pid); if(!p) return ''; return `<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold text-white" style="background-color:${p.color}"><span class="w-1.5 h-1.5 rounded-full bg-white mr-1.5"></span>${p.name}</span>`; }).join("");
+    document.getElementById("detail-edit-btn").onclick=()=>{ closeModal("activity-detail-modal"); openActivityModal(act.id); };
+    openModal("activity-detail-modal"); lucide.createIcons();
+}
 
-        function handleDeleteCurrentProject() {
-            if (cloudProjects.length <= 1) { alert("至少需要保留一個旅遊專案！"); return; }
-            const currentProj = getCurrentProject();
-            if (!confirm(`確定要刪除專案「${currentProj.name}」嗎？此操作無法復原。`)) return;
-            cloudProjects = cloudProjects.filter(p => p.id !== currentProj.id);
-            // 自己切到第一個
-            localState.currentProjectId     = cloudProjects[0].id;
-            localState.timelineSelectedDate = "ALL";
-            saveLocalState();
-            saveData();  // 把刪除結果寫到雲端（其他人的 onSnapshot 會收到，但不會強制跳轉）
-            renderProjectSelector();
-            loadProject();
-        }
+// ════════════════════════════════════════════════════════════════
+//  TripPlanner：人員管理
+// ════════════════════════════════════════════════════════════════
+function isMemberInBills(personName){
+    const project=getCurrentProject(); if(!project) return false;
+    return (cloudBills[project.id]||[]).some(b=>b.payer===personName||Object.keys(b.shares||{}).includes(personName));
+}
 
-        // ─── Tab 1：時程圖 ────────────────────────────────────────────────
-        function renderTimeline() {
-            const project = getCurrentProject();
-            if (!project) return;
-            const filtersContainer = document.getElementById("timeline-date-filters");
-            const dates = [];
-            let curr = new Date(project.startDate);
-            const stop = new Date(project.endDate);
-            while (curr <= stop) {
-                dates.push(curr.toISOString().split("T")[0]);
-                curr.setDate(curr.getDate() + 1);
-            }
+function renderPersonnelList(){
+    const project=getCurrentProject(); const container=document.getElementById("personnel-list-container"); if(!project) return;
+    container.innerHTML=project.personnel.map(p=>{
+        const inBills=isMemberInBills(p.name);
+        const deleteBtn=inBills
+            ?`<button disabled title="此成員已有分帳單據，無法刪除" class="p-1.5 text-slate-200 rounded-lg cursor-not-allowed"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`
+            :`<button onclick="deletePerson('${p.id}')" class="p-1.5 text-slate-400 hover:text-red-600 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`;
+        return `<div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-inner flex-shrink-0" style="background-color:${p.color}">${p.name.charAt(0).toUpperCase()}</div>
+                <div>
+                    <div class="font-bold text-slate-800">${p.name}</div>
+                    <div class="text-xs text-slate-400 font-mono">ID: ${p.id}</div>
+                    ${inBills?`<div class="text-xs text-amber-600 mt-0.5">已有分帳紀錄</div>`:''}
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <input type="color" value="${p.color}" onchange="updatePersonColor('${p.id}',this.value)" class="w-9 h-9 rounded border-0 cursor-pointer" title="更換代表色">
+                ${deleteBtn}
+            </div>
+        </div>`;
+    }).join(""); lucide.createIcons();
+}
 
-            let filterHtml = `<button onclick="setTimelineDate('ALL')" class="px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${localState.timelineSelectedDate === 'ALL' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">全部(${dates.length}天)</button>`;
-            dates.forEach(d => {
-                const isSelected = localState.timelineSelectedDate === d;
-                filterHtml += `<button onclick="setTimelineDate('${d}')" class="px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${isSelected ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">${d.substring(5)}</button>`;
-            });
-            filtersContainer.innerHTML = filterHtml;
+function handleAddPerson(e){
+    e.preventDefault(); const project=getCurrentProject();
+    const name=document.getElementById("person-name-input").value;
+    const color=document.getElementById("person-color-input").value;
+    project.personnel.push({id:"u_"+Date.now(),name,color});
+    saveData(); closeModal("add-person-modal"); document.getElementById("person-name-input").value=""; loadProject();
+}
 
-            const displayDates = localState.timelineSelectedDate === "ALL" ? dates : [localState.timelineSelectedDate];
-            const filteredActivities = project.activities.filter(a => displayDates.includes(a.start.split("T")[0]));
+function updatePersonColor(personId,newColor){
+    const project=getCurrentProject(); const person=project.personnel.find(p=>p.id===personId);
+    if(person){ person.color=newColor; saveData(); loadProject(); }
+}
 
-            let minHour = 8, maxHour = 20;
-            if (filteredActivities.length > 0) {
-                let earliest = 24, latest = 0;
-                filteredActivities.forEach(a => {
-                    const startH = new Date(a.start).getHours();
-                    const endH   = new Date(a.end).getHours() + (new Date(a.end).getMinutes() > 0 ? 1 : 0);
-                    if (startH < earliest) earliest = startH;
-                    if (endH   > latest)   latest   = endH;
-                });
-                minHour = Math.max(0,  Math.min(minHour, earliest));
-                maxHour = Math.min(24, Math.max(maxHour, latest));
-            }
+function deletePerson(personId){
+    const project=getCurrentProject();
+    if(project.personnel.length<=1){ alert("專案至少需要保留一名成員！"); return; }
+    const person=project.personnel.find(p=>p.id===personId);
+    if(person&&isMemberInBills(person.name)){ alert("此成員已有分帳單據紀錄，無法刪除。"); return; }
+    if(!confirm("確定刪除此成員？（活動列表中的相應參與標籤也會同步更新）")) return;
+    project.personnel=project.personnel.filter(p=>p.id!==personId);
+    project.activities.forEach(a=>{ a.participants=a.participants.filter(pid=>pid!==personId); });
+    saveData(); loadProject();
+}
 
-            const gridContainer = document.getElementById("timeline-grid");
-            let gridHtml = `<div class="grid" style="grid-template-columns: 52px repeat(${displayDates.length}, minmax(160px, 1fr));">`;
-            gridHtml += `<div class="p-2 bg-slate-50 border-b border-r border-slate-200 text-[10px] font-semibold text-slate-500 text-center sticky left-0 z-10">時間</div>`;
-            displayDates.forEach(d => {
-                gridHtml += `<div class="p-2 bg-slate-50 border-b border-r border-slate-200 text-xs font-bold text-slate-700 text-center">${d}</div>`;
-            });
-            for (let h = minHour; h < maxHour; h++) {
-                const hourLabel = `${String(h).padStart(2, '0')}:00`;
-                gridHtml += `<div class="h-14 sm:h-16 p-1 border-b border-r border-slate-100 text-[10px] font-mono text-slate-400 text-center relative bg-slate-50/50 sticky left-0 z-10 flex items-center justify-center">${hourLabel}</div>`;
-                displayDates.forEach(d => {
-                    gridHtml += `<div class="h-14 sm:h-16 border-b border-r border-slate-100 relative bg-white" id="cell-${d}-${h}"></div>`;
-                });
-            }
-            gridHtml += `</div>`;
-            gridContainer.innerHTML = gridHtml;
+function openModal(id){ document.getElementById(id).classList.remove("hidden"); }
+function closeModal(id){ document.getElementById(id).classList.add("hidden"); }
 
-            const isMobile = window.innerWidth < 768;
-            const cellH    = isMobile ? 56 : 64;
+// ════════════════════════════════════════════════════════════════
+//  BillSplitter
+// ════════════════════════════════════════════════════════════════
+let bsCurrentBillMode="equal";
+let bsActiveViewBillId=null;
 
-            displayDates.forEach(d => {
-                const dayActs = filteredActivities
-                    .filter(a => a.start.split("T")[0] === d)
-                    .map(a => {
-                        const startDt = new Date(a.start), endDt = new Date(a.end);
-                        return { ...a, startH: startDt.getHours() + startDt.getMinutes() / 60, endH: endDt.getHours() + endDt.getMinutes() / 60 };
-                    })
-                    .filter(a => a.endH > minHour && a.startH < maxHour)
-                    .sort((a, b) => a.startH - b.startH || (b.endH - b.startH) - (a.endH - a.startH));
+function bsGetBills(){ return cloudBills[localState.currentProjectId]||[]; }
+function bsSetBills(bills){ cloudBills[localState.currentProjectId]=bills; }
 
-                if (dayActs.length === 0) return;
-
-                let clusters = [], currentCluster = [], clusterEnd = -1;
-                dayActs.forEach(act => {
-                    if (currentCluster.length === 0 || act.startH < clusterEnd) {
-                        currentCluster.push(act);
-                        if (act.endH > clusterEnd) clusterEnd = act.endH;
-                    } else {
-                        clusters.push(currentCluster);
-                        currentCluster = [act];
-                        clusterEnd = act.endH;
-                    }
-                });
-                if (currentCluster.length > 0) clusters.push(currentCluster);
-
-                clusters.forEach(cluster => {
-                    let tracks = [];
-                    cluster.forEach(act => {
-                        let assignedTrack = -1;
-                        for (let t = 0; t < tracks.length; t++) {
-                            if (tracks[t] <= act.startH) { assignedTrack = t; tracks[t] = act.endH; break; }
-                        }
-                        if (assignedTrack === -1) { assignedTrack = tracks.length; tracks.push(act.endH); }
-                        act.trackIndex = assignedTrack;
-                    });
-                    const totalTracks = tracks.length;
-                    cluster.forEach(act => {
-                        const startCellIndex = Math.floor(act.startH);
-                        const cell = document.getElementById(`cell-${d}-${startCellIndex}`);
-                        if (!cell) return;
-                        const height   = Math.max((act.endH - act.startH) * cellH, 24);
-                        const widthPct = 100 / totalTracks;
-                        const leftPct  = act.trackIndex * widthPct;
-                        const block    = document.createElement("div");
-                        block.className = `absolute rounded-md sm:rounded-lg p-1.5 text-white shadow-sm cursor-pointer transition-all hover:scale-[1.02] hover:z-30 hover:shadow-md z-20 overflow-hidden flex flex-col justify-between ${act.isTentative ? 'bg-tentative border border-white/40' : ''}`;
-                        block.style.top             = `${(act.startH - startCellIndex) * cellH}px`;
-                        block.style.height          = `${height}px`;
-                        block.style.left            = `calc(${leftPct}% + 2px)`;
-                        block.style.width           = `calc(${widthPct}% - 4px)`;
-                        block.style.backgroundColor = act.color || "#3b82f6";
-                        block.onclick = (e) => { e.stopPropagation(); openActivityDetailModal(act.id); };
-                        const partDots = act.participants.map(pid => {
-                            const person = project.personnel.find(p => p.id === pid);
-                            if (!person) return '';
-                            return `<span class="inline-flex items-center justify-center w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full text-[8px] sm:text-[9px] font-bold text-white ring-1 ring-white/50" style="background-color:${person.color}">${person.name.charAt(0).toUpperCase()}</span>`;
-                        }).join("");
-                        block.innerHTML = `
-                            <div>
-                                <div class="font-bold text-[10px] sm:text-xs truncate leading-tight">${act.name}</div>
-                                <div class="text-[9px] sm:text-[10px] opacity-90 font-mono">${act.start.substring(11,16)}-${act.end.substring(11,16)}</div>
-                            </div>
-                            <div class="flex items-center space-x-0.5 mt-0.5">${partDots}</div>`;
-                        cell.appendChild(block);
-                    });
-                });
-            });
-        }
-
-        function setTimelineDate(dateStr) {
-            localState.timelineSelectedDate = dateStr;
-            saveLocalState();
-            renderTimeline();
-        }
-
-        // ─── Tab 2：活動清單 ──────────────────────────────────────────────
-        function renderActivitiesTable() {
-            const project = getCurrentProject();
-            const tbody   = document.getElementById("activities-table-body");
-            if (!project) return;
-            if (project.activities.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-400 text-sm">目前尚無活動資料，點擊上方按鈕新增。</td></tr>`;
-                return;
-            }
-            tbody.innerHTML = project.activities.map(act => {
-                const partBadges = act.participants.map(pid => {
-                    const person = project.personnel.find(p => p.id === pid);
-                    if (!person) return '';
-                    return `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium text-white" style="background-color: ${person.color}">${person.name}</span>`;
-                }).join(" ");
-                const mapsUrl = act.location ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(act.location)}` : '#';
-                return `
-                    <tr class="hover:bg-slate-50 transition-colors">
-                        <td class="p-3.5 font-semibold text-slate-800" data-label="活動">${act.name}</td>
-                        <td class="p-3.5" data-label="人員"><div class="flex flex-wrap gap-1">${partBadges}</div></td>
-                        <td class="p-3.5 font-mono text-xs text-slate-600" data-label="開始">${act.start.replace("T", " ")}</td>
-                        <td class="p-3.5 font-mono text-xs text-slate-600" data-label="結束">${act.end.replace("T", " ")}</td>
-                        <td class="p-3.5" data-label="地點">${act.location ? `<a href="${mapsUrl}" target="_blank" class="text-indigo-600 hover:text-indigo-800 inline-flex items-center hover:underline"><i data-lucide="map-pin" class="w-3.5 h-3.5 mr-1"></i>${act.location}</a>` : '-'}</td>
-                        <td class="p-3.5 text-slate-600 text-xs" data-label="聯絡">${act.contact || '-'}</td>
-                        <td class="p-3.5 text-center" data-label="擬訂">${act.isTentative ? `<span class="px-2 py-0.5 text-xs bg-amber-100 text-amber-800 rounded-full font-medium">是</span>` : `<span class="text-xs text-slate-400">否</span>`}</td>
-                        <td class="p-3.5 text-center" data-label="顏色"><span class="inline-block w-5 h-5 rounded-full border border-slate-200" style="background-color: ${act.color}"></span></td>
-                        <td class="p-3.5 text-right space-x-1" data-label="">
-                            <button onclick="openActivityModal('${act.id}')" class="p-1.5 text-slate-500 hover:text-indigo-600 rounded"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
-                            <button onclick="deleteActivity('${act.id}')" class="p-1.5 text-slate-500 hover:text-red-600 rounded"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                        </td>
-                    </tr>`;
-            }).join("");
-            lucide.createIcons();
-        }
-
-        function openActivityModal(actId = null) {
-            const project = getCurrentProject();
-            document.getElementById("activity-form").reset();
-            const container = document.getElementById("act-participants-checkboxes");
-            container.innerHTML = project.personnel.map(p => `
-                <label class="flex items-center space-x-2 text-sm text-slate-700 cursor-pointer py-0.5">
-                    <input type="checkbox" value="${p.id}" class="act-part-cb w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
-                    <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color:${p.color}"></span>
-                    <span>${p.name}</span>
-                </label>`).join("");
-            if (actId) {
-                const act = project.activities.find(a => a.id === actId);
-                if (act) {
-                    document.getElementById("activity-modal-title").innerText = "編輯活動";
-                    document.getElementById("act-id").value          = act.id;
-                    document.getElementById("act-name").value        = act.name;
-                    document.getElementById("act-start").value       = act.start;
-                    document.getElementById("act-end").value         = act.end;
-                    document.getElementById("act-location").value    = act.location || "";
-                    document.getElementById("act-contact").value     = act.contact  || "";
-                    document.getElementById("act-tentative").checked = act.isTentative;
-                    document.getElementById("act-color").value       = act.color || "#3b82f6";
-                    document.querySelectorAll(".act-part-cb").forEach(cb => { cb.checked = act.participants.includes(cb.value); });
-                }
-            } else {
-                document.getElementById("activity-modal-title").innerText = "新增活動";
-                document.getElementById("act-id").value    = "";
-                document.getElementById("act-start").value = `${project.startDate}T09:00`;
-                document.getElementById("act-end").value   = `${project.startDate}T10:00`;
-            }
-            openModal("activity-modal");
-        }
-
-        function handleSaveActivity(e) {
-            e.preventDefault();
-            const project = getCurrentProject();
-            const id = document.getElementById("act-id").value;
-            const selectedParticipants = Array.from(document.querySelectorAll(".act-part-cb:checked")).map(cb => cb.value);
-            const activityData = {
-                id:           id || "a_" + Date.now(),
-                name:         document.getElementById("act-name").value,
-                start:        document.getElementById("act-start").value,
-                end:          document.getElementById("act-end").value,
-                participants: selectedParticipants,
-                location:     document.getElementById("act-location").value,
-                contact:      document.getElementById("act-contact").value,
-                isTentative:  document.getElementById("act-tentative").checked,
-                color:        document.getElementById("act-color").value
-            };
-            if (id) {
-                const index = project.activities.findIndex(a => a.id === id);
-                if (index !== -1) project.activities[index] = activityData;
-            } else {
-                project.activities.push(activityData);
-            }
-            saveData();
-            closeModal("activity-modal");
-            renderTimeline();
-            renderActivitiesTable();
-        }
-
-        function deleteActivity(actId) {
-            if (!confirm("確定要刪除此活動嗎？")) return;
-            const project = getCurrentProject();
-            project.activities = project.activities.filter(a => a.id !== actId);
-            saveData();
-            renderTimeline();
-            renderActivitiesTable();
-        }
-
-        function openActivityDetailModal(actId) {
-            const project = getCurrentProject();
-            const act = project.activities.find(a => a.id === actId);
-            if (!act) return;
-            document.getElementById("detail-title").innerText = act.name;
-            document.getElementById("detail-time").innerText  = `${act.start.replace("T", " ")} ~ ${act.end.replace("T", " ")}`;
-            const locEl = document.getElementById("detail-location");
-            if (act.location) {
-                locEl.innerHTML = `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(act.location)}" target="_blank" class="text-indigo-600 hover:underline flex items-center">${act.location} <i data-lucide="external-link" class="w-3 h-3 ml-1"></i></a>`;
-            } else {
-                locEl.innerText = "未設定";
-            }
-            document.getElementById("detail-contact").innerText = act.contact || "無";
-            const tagEl = document.getElementById("detail-tentative-tag");
-            act.isTentative ? tagEl.classList.remove("hidden") : tagEl.classList.add("hidden");
-            const partsEl = document.getElementById("detail-participants");
-            partsEl.innerHTML = act.participants.map(pid => {
-                const p = project.personnel.find(person => person.id === pid);
-                if (!p) return '';
-                return `<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold text-white" style="background-color:${p.color}"><span class="w-1.5 h-1.5 rounded-full bg-white mr-1.5"></span>${p.name}</span>`;
-            }).join("");
-            document.getElementById("detail-edit-btn").onclick = () => {
-                closeModal("activity-detail-modal");
-                openActivityModal(act.id);
-            };
-            openModal("activity-detail-modal");
-            lucide.createIcons();
-        }
-
-        // ─── Tab 3：人員管理 ──────────────────────────────────────────────
-        function renderPersonnelList() {
-            const project   = getCurrentProject();
-            const container = document.getElementById("personnel-list-container");
-            if (!project) return;
-            container.innerHTML = project.personnel.map(p => `
-                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-inner flex-shrink-0" style="background-color: ${p.color}">
-                            ${p.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                            <div class="font-bold text-slate-800">${p.name}</div>
-                            <div class="text-xs text-slate-400 font-mono">ID: ${p.id}</div>
-                        </div>
+function bsRenderApp(){
+    const project=getCurrentProject();
+    document.getElementById("bs-project-title").innerText=project?project.name:"請先建立或選擇專案";
+    document.getElementById("bs-project-members").innerHTML=project?memberAvatars(project.personnel,"w-6 h-6 sm:w-7 sm:h-7"):"";
+    const billListEl=document.getElementById("bs-bill-list");
+    if(!project){ billListEl.innerHTML='<li style="text-align:center;color:#64748b;padding:10px">尚無專案</li>'; bsRenderSettlement([]); return; }
+    const bills=bsGetBills();
+    if(bills.length===0){
+        billListEl.innerHTML='<li style="text-align:center;color:#64748b;padding:10px">尚無單據資料</li>';
+    }else{
+        billListEl.innerHTML=bills.map(b=>{
+            const payerPerson=project.personnel.find(p=>p.name===b.payer);
+            const payerAvatar=payerPerson?memberAvatar(payerPerson,"w-5 h-5"):"";
+            return `<li class="bs-bill-item" onclick="bsViewBill('${b.id}')">
+                <div>
+                    <strong>${bsEscapeHtml(b.title)}</strong>
+                    <div style="font-size:.8rem;color:#64748b;display:flex;align-items:center;gap:5px;margin-top:3px">
+                        付款人：${payerAvatar}<span>${bsEscapeHtml(b.payer)}</span>
                     </div>
-                    <div class="flex items-center space-x-2">
-                        <input type="color" value="${p.color}" onchange="updatePersonColor('${p.id}', this.value)" class="w-9 h-9 rounded border-0 cursor-pointer" title="更換代表色">
-                        <button onclick="deletePerson('${p.id}')" class="p-1.5 text-slate-400 hover:text-red-600 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                    </div>
-                </div>`).join("");
-            lucide.createIcons();
-        }
+                </div>
+                <div><strong>${Number(b.amount).toFixed(2)} 元</strong></div>
+            </li>`;
+        }).join("");
+    }
+    bsCalculateAndRenderSettlement();
+}
 
-        function handleAddPerson(e) {
-            e.preventDefault();
-            const project = getCurrentProject();
-            const name    = document.getElementById("person-name-input").value;
-            const color   = document.getElementById("person-color-input").value;
-            project.personnel.push({ id: "u_" + Date.now(), name, color });
-            saveData();
-            closeModal("add-person-modal");
-            document.getElementById("person-name-input").value = "";
-            loadProject();
-        }
+function bsOpenBillModal(billToEdit=null){
+    const project=getCurrentProject(); if(!project) return alert("請先建立專案");
+    const payerSelect=document.getElementById("bs-bill-payer");
+    payerSelect.innerHTML=project.personnel.map(m=>`<option value="${bsEscapeHtml(m.name)}">${bsEscapeHtml(m.name)}</option>`).join("");
+    if(billToEdit){
+        document.getElementById("bs-bill-modal-title").textContent="編輯單據";
+        document.getElementById("bs-editing-bill-id").value=billToEdit.id;
+        document.getElementById("bs-bill-title").value=billToEdit.title;
+        payerSelect.value=billToEdit.payer;
+        document.getElementById("bs-btn-delete-bill").style.display="block";
+        bsSetBillMode(billToEdit.mode);
+        if(billToEdit.mode==="equal"){ document.getElementById("bs-bill-total-amount").value=billToEdit.amount; bsRenderEqualDebtors(billToEdit.debtorDeductions); }
+        else bsRenderCustomDebtors(billToEdit.customDebts);
+    }else{
+        document.getElementById("bs-bill-modal-title").textContent="新增單據";
+        document.getElementById("bs-editing-bill-id").value="";
+        document.getElementById("bs-bill-title").value="";
+        document.getElementById("bs-bill-total-amount").value="";
+        document.getElementById("bs-btn-delete-bill").style.display="none";
+        bsSetBillMode("equal"); bsRenderEqualDebtors({}); bsRenderCustomDebtors({});
+    }
+    document.getElementById("bs-bill-modal").classList.add("active");
+}
 
-        function updatePersonColor(personId, newColor) {
-            const project = getCurrentProject();
-            const person  = project.personnel.find(p => p.id === personId);
-            if (person) { person.color = newColor; saveData(); loadProject(); }
-        }
+function bsSetBillMode(mode){
+    bsCurrentBillMode=mode;
+    document.getElementById("bs-btn-mode-equal").classList.toggle("active",mode==="equal");
+    document.getElementById("bs-btn-mode-custom").classList.toggle("active",mode==="custom");
+    document.getElementById("bs-equal-mode-area").style.display=mode==="equal"?"block":"none";
+    document.getElementById("bs-custom-mode-area").style.display=mode==="custom"?"block":"none";
+}
 
-        function deletePerson(personId) {
-            const project = getCurrentProject();
-            if (project.personnel.length <= 1) { alert("專案至少需要保留一名成員！"); return; }
-            if (!confirm("確定刪除此成員？（活動列表中的相應參與標籤也會同步更新）")) return;
-            project.personnel = project.personnel.filter(p => p.id !== personId);
-            project.activities.forEach(a => { a.participants = a.participants.filter(pid => pid !== personId); });
-            saveData();
-            loadProject();
-        }
+function bsToggleSelectAll(checked){
+    document.querySelectorAll(".bs-eq-check").forEach(cb=>{ cb.checked=checked; });
+}
 
-        // ─── 通用 Modal ───────────────────────────────────────────────────
-        function openModal(id)  { document.getElementById(id).classList.remove("hidden"); }
-        function closeModal(id) { document.getElementById(id).classList.add("hidden"); }
-    </script>
+function bsSyncSelectAllState(){
+    const all=document.querySelectorAll(".bs-eq-check");
+    const checked=document.querySelectorAll(".bs-eq-check:checked");
+    const cb=document.getElementById("bs-select-all-cb"); if(!cb) return;
+    cb.indeterminate=checked.length>0&&checked.length<all.length;
+    cb.checked=checked.length===all.length&&all.length>0;
+}
+
+function bsRenderEqualDebtors(deductions={}){
+    const project=getCurrentProject(); if(!project) return;
+    const container=document.getElementById("bs-equal-debtors-list");
+    container.innerHTML=project.personnel.map(p=>{
+        const m=p.name;
+        return `<div class="bs-dynamic-row">
+            <label style="flex:1;display:flex;align-items:center;gap:6px">
+                <input type="checkbox" class="bs-eq-check" value="${bsEscapeHtml(m)}" ${deductions[m]!==undefined?'checked':''} onchange="bsSyncSelectAllState()" style="width:16px;height:16px">
+                ${memberAvatar(p,"w-5 h-5")}
+                <span>${bsEscapeHtml(m)}</span>
+            </label>
+            <span>扣除：</span>
+            <input type="number" class="bs-form-control bs-eq-deduct" data-member="${bsEscapeHtml(m)}" value="${deductions[m]||0}" style="width:90px"> 元
+        </div>`;
+    }).join("");
+    setTimeout(bsSyncSelectAllState,0);
+}
+
+function bsRenderCustomDebtors(customDebts={}){
+    const project=getCurrentProject(); if(!project) return;
+    const container=document.getElementById("bs-custom-debtors-list");
+    container.innerHTML=project.personnel.map(p=>{
+        const m=p.name;
+        return `<div class="bs-dynamic-row">
+            <span style="flex:1;display:flex;align-items:center;gap:6px">${memberAvatar(p,"w-5 h-5")}${bsEscapeHtml(m)}</span>
+            <input type="number" class="bs-form-control bs-custom-debt" data-member="${bsEscapeHtml(m)}" value="${customDebts[m]||0}" style="width:110px"> 元
+        </div>`;
+    }).join("");
+}
+
+function bsSaveBill(){
+    const title=document.getElementById("bs-bill-title").value.trim();
+    const payer=document.getElementById("bs-bill-payer").value;
+    const editingId=document.getElementById("bs-editing-bill-id").value;
+    if(!title) return alert("請輸入單據名稱");
+    let billData={id:editingId||"bill_"+Date.now(),title,payer,mode:bsCurrentBillMode,shares:{}};
+    if(bsCurrentBillMode==="equal"){
+        const total=parseFloat(document.getElementById("bs-bill-total-amount").value);
+        if(isNaN(total)||total<=0) return alert("請輸入有效總金額");
+        const checkboxes=document.querySelectorAll(".bs-eq-check:checked");
+        const selectedMembers=Array.from(checkboxes).map(c=>c.value);
+        if(selectedMembers.length===0) return alert("請至少選擇一位欠款人");
+        let deductions={},sumDeduction=0;
+        document.querySelectorAll(".bs-eq-deduct").forEach(input=>{ const m=input.dataset.member; if(selectedMembers.includes(m)){ const val=parseFloat(input.value)||0; deductions[m]=val; sumDeduction+=val; } });
+        if(sumDeduction>total) return alert("扣除額總和不可大於總金額");
+        const totalCents=bsToCents(total); const deductionCents={}; let sumDC=0;
+        selectedMembers.forEach(m=>{ deductionCents[m]=bsToCents(deductions[m]||0); sumDC+=deductionCents[m]; });
+        if(sumDC>totalCents) return alert("扣除額總和不可大於總金額");
+        const remainCents=totalCents-sumDC; const baseShare=Math.floor(remainCents/selectedMembers.length); let remainder=remainCents%selectedMembers.length;
+        selectedMembers.forEach(m=>{ const extra=remainder>0?1:0; if(remainder>0)remainder--; billData.shares[m]=bsCentsToAmount(deductionCents[m]+baseShare+extra); });
+        billData.amount=bsCentsToAmount(totalCents); billData.debtorDeductions=deductions;
+    }else{
+        let total=0,debts={};
+        document.querySelectorAll(".bs-custom-debt").forEach(input=>{ const m=input.dataset.member; const val=parseFloat(input.value)||0; if(val>0){debts[m]=val;total+=val;} });
+        if(total<=0) return alert("債務總額必須大於 0");
+        billData.amount=total; billData.shares=debts; billData.customDebts=debts;
+    }
+    const bills=bsGetBills();
+    if(editingId){ const idx=bills.findIndex(b=>b.id===editingId); bills[idx]=billData; }
+    else bills.push(billData);
+    bsSetBills(bills); saveData();
+    bsCloseModal("bs-bill-modal"); bsCloseModal("bs-view-bill-modal"); bsRenderApp();
+}
+
+function bsViewBill(id){
+    bsActiveViewBillId=id;
+    const project=getCurrentProject();
+    const bill=bsGetBills().find(b=>b.id===id); if(!bill) return;
+    document.getElementById("bs-view-bill-title").textContent=bill.title;
+    const payerPerson=project?project.personnel.find(p=>p.name===bill.payer):null;
+    const payerAvatar=payerPerson?memberAvatar(payerPerson,"w-5 h-5"):"";
+    let html=`
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><strong>付款人：</strong>${payerAvatar}<span>${bsEscapeHtml(bill.payer)}</span></div>
+        <div><strong>總金額：</strong>${Number(bill.amount).toFixed(2)} 元</div>
+        <div><strong>分攤模式：</strong>${bill.mode==="equal"?"均分模式":"指定模式"}</div>
+        <hr style="margin:8px 0;border:none;border-top:1px solid #e2e8f0">
+        <div><strong>各人應負擔明細：</strong></div>`;
+    for(let [member,amt] of Object.entries(bill.shares)){
+        const mp=project?project.personnel.find(p=>p.name===member):null;
+        const av=mp?memberAvatar(mp,"w-4 h-4"):"";
+        html+=`<div style="display:flex;align-items:center;gap:5px;margin-top:4px">- ${av}<span>${bsEscapeHtml(member)}: ${Number(amt).toFixed(2)} 元</span></div>`;
+    }
+    document.getElementById("bs-view-bill-content").innerHTML=html;
+    document.getElementById("bs-view-bill-modal").classList.add("active");
+}
+
+function bsOpenEditBillModal(){
+    const bill=bsGetBills().find(b=>b.id===bsActiveViewBillId);
+    bsCloseModal("bs-view-bill-modal"); bsOpenBillModal(bill);
+}
+
+function bsDeleteCurrentBill(){
+    if(!confirm("確定要刪除這筆單據嗎？")) return;
+    const editingId=document.getElementById("bs-editing-bill-id").value;
+    const bills=bsGetBills().filter(b=>b.id!==bsActiveViewBillId&&b.id!==editingId);
+    bsSetBills(bills); saveData();
+    bsCloseModal("bs-view-bill-modal"); bsCloseModal("bs-bill-modal"); bsRenderApp();
+}
+
+function bsCloseModal(id){ document.getElementById(id).classList.remove("active"); }
+
+function bsCalculateAndRenderSettlement(){
+    const project=getCurrentProject(); const bills=bsGetBills();
+    if(!project||bills.length===0){ bsRenderSettlement([]); return; }
+    const balances={}; project.personnel.forEach(p=>balances[p.name]=0);
+    bills.forEach(bill=>{
+        const payer=bill.payer; const ba=bsToCents(bill.amount);
+        if(balances[payer]===undefined) balances[payer]=0; balances[payer]+=ba;
+        for(const [debtor,amt] of Object.entries(bill.shares||{})){
+            if(balances[debtor]===undefined) balances[debtor]=0; balances[debtor]-=bsToCents(amt);
+        }
+    });
+    const totalBalance=Object.values(balances).reduce((s,v)=>s+v,0);
+    if(totalBalance!==0){ bsRenderSettlement([]); return; }
+    bsRenderSettlement(bsSolveMinimumTransactions(balances));
+}
+
+function bsToCents(amount){ const v=Number(amount); if(!Number.isFinite(v)) return 0; return Math.round(v*100); }
+function bsCentsToAmount(cents){ return cents/100; }
+
+function bsSolveMinimumTransactions(balances){
+    const entries=Object.entries(balances).map(([member,cents])=>({member,cents})).filter(x=>x.cents!==0);
+    if(entries.length<=1) return [];
+    const best={count:Infinity,transactions:[]};
+    const working=entries.map(x=>x.cents); const names=entries.map(x=>x.member);
+    function dfs(start,transactions){
+        while(start<working.length&&working[start]===0) start++;
+        if(start===working.length){ if(transactions.length<best.count){best.count=transactions.length;best.transactions=transactions.map(t=>({...t}));} return; }
+        if(transactions.length>=best.count) return;
+        const seen=new Set(); const candidates=[];
+        for(let j=start+1;j<working.length;j++){
+            if(working[j]===0) continue;
+            if((working[start]<0&&working[j]>0)||(working[start]>0&&working[j]<0)){
+                const key=String(working[j]); if(!seen.has(key)){seen.add(key);candidates.push(j);}
+            }
+        }
+        candidates.sort((a,b)=>{ const ae=Math.abs(working[start]+working[a])===0?0:1; const be=Math.abs(working[start]+working[b])===0?0:1; if(ae!==be)return ae-be; return Math.abs(working[start]+working[a])-Math.abs(working[start]+working[b]); });
+        for(const j of candidates){
+            const amount=Math.min(Math.abs(working[start]),Math.abs(working[j])); if(amount<=0) continue;
+            const from=working[start]<0?names[start]:names[j]; const to=working[start]<0?names[j]:names[start];
+            const os=working[start]; const oj=working[j];
+            working[start]=os<0?os+amount:os-amount; working[j]=oj<0?oj+amount:oj-amount;
+            transactions.push({from,to,amount:bsCentsToAmount(amount)});
+            const ns=working[start]===0?start+1:start; dfs(ns,transactions);
+            transactions.pop(); working[start]=os; working[j]=oj;
+            if(Math.abs(working[start])===0) break;
+        }
+    }
+    dfs(0,[]); return best.transactions;
+}
+
+function bsRenderSettlement(transactions){
+    const container=document.getElementById("bs-settlement-list");
+    if(transactions.length===0){ container.innerHTML='<div style="text-align:center;color:#64748b">帳務已平衡，無需額外交易！</div>'; return; }
+    const project=getCurrentProject();
+    container.innerHTML=transactions.map(t=>{
+        const fp=project?project.personnel.find(p=>p.name===t.from):null;
+        const tp=project?project.personnel.find(p=>p.name===t.to):null;
+        const fa=fp?memberAvatar(fp,"w-5 h-5"):""; const ta=tp?memberAvatar(tp,"w-5 h-5"):"";
+        return `<div class="bs-settlement-item">
+            <span style="display:flex;align-items:center;gap:5px">${fa}<strong>${bsEscapeHtml(t.from)}</strong><span style="margin:0 4px">應給予</span>${ta}<strong>${bsEscapeHtml(t.to)}</strong></span>
+            <strong style="color:var(--bs-primary)">${Number(t.amount).toFixed(2)} 元</strong>
+        </div>`;
+    }).join("");
+}
+
+function bsEscapeHtml(str){ return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
+
+document.addEventListener('keydown',(e)=>{
+    if(e.key==='Escape'){
+        ['bs-bill-modal','bs-view-bill-modal'].forEach(bsCloseModal);
+        ['new-project-modal','activity-modal','activity-detail-modal','add-person-modal'].forEach(closeModal);
+    }
+});
+</script>
 </body>
 </html>
