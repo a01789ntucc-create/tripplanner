@@ -16,46 +16,100 @@
         #sync-indicator{transition:opacity .5s ease}
 
         /* ── Logo 上下翻轉（繞 X 軸） ── */
-        .logo-flip-wrapper{
-            perspective:600px;
-            display:inline-flex;
-            align-items:center;
-            cursor:pointer;
-            position:relative;
-        }
-        .logo-sizer{
-            visibility:hidden;
-            display:flex;
-            align-items:center;
-            gap:6px;
-            white-space:nowrap;
-            font-weight:700;
-            font-size:1.125rem;
-        }
+        .logo-flip-wrapper{perspective:600px;display:inline-flex;align-items:center;cursor:pointer;position:relative}
+        .logo-sizer{visibility:hidden;display:flex;align-items:center;gap:6px;white-space:nowrap;font-weight:700;font-size:1.125rem}
         @media(min-width:640px){.logo-sizer{font-size:1.25rem}}
-        .logo-flip-inner{
-            position:absolute;
-            inset:0;
-            transform-style:preserve-3d;
-            transition:transform .55s cubic-bezier(.4,0,.2,1);
-            display:flex;
-            align-items:center;
-        }
-        /* ✅ 上下翻轉：繞 X 軸旋轉 180deg */
+        .logo-flip-inner{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .55s cubic-bezier(.4,0,.2,1);display:flex;align-items:center}
         .logo-flip-inner.flipped{transform:rotateX(180deg)}
-        .logo-face{
-            position:absolute;
-            inset:0;
-            backface-visibility:hidden;
-            -webkit-backface-visibility:hidden;
-            display:flex;
-            align-items:center;
-            gap:6px;
-            white-space:nowrap;
-        }
+        .logo-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;display:flex;align-items:center;gap:6px;white-space:nowrap}
         .logo-face.front{transform:rotateX(0deg)}
-        /* 背面需補償 X 軸翻轉後的上下顛倒 */
         .logo-face.back{transform:rotateX(180deg)}
+
+        /* ══════════════════════════════════════════
+           統一 FAB 按鈕
+        ══════════════════════════════════════════ */
+        #unified-fab {
+            position: fixed;
+            right: 20px;
+            /* 預設底部位置（BillSplitter / 桌面版） */
+            bottom: 24px;
+            z-index: 45;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            /* 收合狀態：圓形 */
+            width: 56px;
+            height: 56px;
+            border-radius: 28px;
+            border: none;
+            color: #fff;
+            font-size: 26px;
+            font-weight: 300;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(0,0,0,.25);
+            overflow: hidden;
+            white-space: nowrap;
+            /* 展開動畫 */
+            transition: width .28s cubic-bezier(.4,0,.2,1),
+                        border-radius .28s cubic-bezier(.4,0,.2,1),
+                        background-color .2s,
+                        bottom .2s;
+            padding: 0 16px 0 0;
+            /* 文字隱藏（收合時） */
+        }
+        /* TripPlanner 主色 */
+        #unified-fab.fab-trip  { background: #4f46e5; }
+        /* BillSplitter 主色 */
+        #unified-fab.fab-bill  { background: #059669; }
+
+        /* 展開狀態 */
+        #unified-fab.fab-expanded {
+            width: 148px;
+            border-radius: 28px;
+        }
+
+        /* FAB 內部佈局 */
+        #fab-icon {
+            position: absolute;
+            right: 0;
+            width: 56px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            font-weight: 300;
+            flex-shrink: 0;
+            transition: transform .28s cubic-bezier(.4,0,.2,1);
+            pointer-events: none;
+        }
+        #unified-fab.fab-expanded #fab-icon {
+            transform: rotate(45deg);
+        }
+        #fab-label {
+            position: absolute;
+            left: 16px;
+            right: 56px;
+            text-align: left;
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: .01em;
+            opacity: 0;
+            transform: translateX(8px);
+            transition: opacity .2s .05s, transform .2s .05s;
+            pointer-events: none;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        #unified-fab.fab-expanded #fab-label {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        /* TripPlanner 時，FAB 在底部導覽列上方 */
+        #unified-fab.fab-above-nav {
+            bottom: 80px;
+        }
 
         /* ── BillSplitter 樣式 ── */
         :root{--bs-primary:#2563eb;--bs-primary-hover:#1d4ed8;--bs-bg:#f8fafc;--bs-card:#ffffff;--bs-text:#0f172a;--bs-border:#e2e8f0;--bs-danger:#ef4444}
@@ -88,7 +142,6 @@
         .bs-toggle-group{display:flex;background:var(--bs-bg);border-radius:6px;padding:2px;border:1px solid var(--bs-border)}
         .bs-toggle-btn{padding:4px 12px;border:none;background:transparent;font-size:.8rem;cursor:pointer;border-radius:4px}
         .bs-toggle-btn.active{background:#fff;font-weight:700;box-shadow:0 1px 2px rgba(0,0,0,.1)}
-        .bs-member-chip{display:inline-flex;align-items:center;padding:5px 9px;border-radius:999px;background:#f1f5f9;color:#334155;font-size:.82rem;gap:6px}
         .bs-empty-hint{color:#64748b;font-size:.85rem}
 
         /* ── 手機底部導覽列 ── */
@@ -118,46 +171,13 @@
             #timeline-date-filters{gap:6px}
             .bs-modal{border-radius:20px 20px 0 0;max-height:92vh}
             .bs-modal-overlay{align-items:flex-end}
-            /* 手機隱藏桌面版新增按鈕 */
-            #btn-add-activity-desktop{display:none}
-            #btn-add-bill-desktop{display:none}
-            /* 手機顯示懸浮按鈕 */
-            .mobile-fab{display:flex!important}
         }
-        @media(min-width:768px){
-            /* 桌面隱藏懸浮按鈕 */
-            .mobile-fab{display:none!important}
-        }
-
-        /* 懸浮 FAB 按鈕共用樣式 */
-        .mobile-fab{
-            display:none;
-            position:fixed;
-            right:20px;
-            width:56px;
-            height:56px;
-            border-radius:50%;
-            border:none;
-            color:#fff;
-            font-size:28px;
-            font-weight:300;
-            align-items:center;
-            justify-content:center;
-            box-shadow:0 4px 16px rgba(0,0,0,.25);
-            cursor:pointer;
-            z-index:39;
-            transition:transform .15s, box-shadow .15s;
-            line-height:1;
-        }
-        .mobile-fab:active{transform:scale(.93);box-shadow:0 2px 8px rgba(0,0,0,.2)}
     </style>
 
     <!-- ✅ Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import { getFirestore,doc,getDoc,setDoc,onSnapshot,serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-        // ✏️ 請替換為你的 Firebase 設定
         const firebaseConfig = {
           apiKey: "AIzaSyDDqGA_Sh3oUKDw5v0ZfL-OJWSYIEqkAs0",
           authDomain: "trip-planner-by-a01789.firebaseapp.com",
@@ -167,9 +187,7 @@
           appId: "1:123576673845:web:5a1990fbc831c6c0f0b37c",
           measurementId: "G-GB14NQN8DF"
         };
-
-        const app = initializeApp(firebaseConfig);
-        const db  = getFirestore(app);
+        const app=initializeApp(firebaseConfig); const db=getFirestore(app);
         window._db=db; window._fsDoc=doc; window._fsGetDoc=getDoc;
         window._fsSetDoc=setDoc; window._fsOnSnapshot=onSnapshot;
         window._fsServerTimestamp=serverTimestamp; window._firebaseReady=true;
@@ -178,29 +196,19 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans">
 
-<!-- ══════════════════════════════════════════
-     Header
-══════════════════════════════════════════ -->
+<!-- Header -->
 <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-14 sm:h-16">
-
             <div class="flex items-center space-x-2 sm:space-x-4 min-w-0">
-
-                <!-- Logo 上下翻轉區 -->
                 <div class="logo-flip-wrapper flex-shrink-0" onclick="toggleApp()" title="切換應用程式">
-                    <!-- 佔位（取較寬者） -->
-                    <div class="logo-sizer">
-                        <span>BillSplitter</span>
-                    </div>
+                    <div class="logo-sizer"><span>BillSplitter</span></div>
                     <div class="logo-flip-inner" id="logoFlipInner">
-                        <!-- 正面：TripPlanner -->
                         <div class="logo-face front text-indigo-600 font-bold text-lg sm:text-xl">
                             <i data-lucide="map-pin" class="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0"></i>
                             <span class="hidden sm:inline">TripPlanner</span>
                             <span class="sm:hidden">Trip</span>
                         </div>
-                        <!-- 背面：BillSplitter -->
                         <div class="logo-face back text-emerald-600 font-bold text-lg sm:text-xl">
                             <i data-lucide="receipt" class="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0"></i>
                             <span class="hidden sm:inline">BillSplitter</span>
@@ -208,9 +216,7 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="h-5 w-px bg-slate-300 flex-shrink-0"></div>
-
                 <div class="flex items-center space-x-1 sm:space-x-2 min-w-0">
                     <select id="project-select" class="bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs sm:text-sm font-semibold py-1.5 px-2 sm:px-3 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-0 truncate"></select>
                     <button onclick="openNewProjectModal()" class="inline-flex items-center justify-center p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors flex-shrink-0" title="新增專案">
@@ -221,7 +227,6 @@
                     </button>
                 </div>
             </div>
-
             <div class="flex items-center space-x-1 sm:space-x-4 flex-shrink-0">
                 <div id="sync-indicator" class="flex items-center space-x-1.5 text-xs text-slate-400">
                     <span id="sync-dot" class="w-2 h-2 rounded-full bg-slate-300 flex-shrink-0"></span>
@@ -243,16 +248,12 @@
     </div>
 </header>
 
-<!-- ══════════════════════════════════════════
-     TripPlanner Main
-══════════════════════════════════════════ -->
+<!-- TripPlanner Main -->
 <main id="app-trip" class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-4 lg:p-8">
-
     <div id="loading-overlay" class="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
         <div class="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4"></div>
         <p class="text-slate-600 font-medium text-sm sm:text-base">正在連線到雲端資料庫...</p>
     </div>
-
     <div id="project-banner" class="bg-white p-3 sm:p-4 rounded-xl border border-slate-200 shadow-sm mb-4 sm:mb-6 flex flex-wrap items-center justify-between gap-3">
         <div class="min-w-0">
             <h1 id="current-project-title" class="text-base sm:text-xl font-bold text-slate-900 truncate">載入中...</h1>
@@ -273,15 +274,9 @@
                     </span>
                     <div id="timeline-date-filters" class="flex flex-wrap gap-1.5"></div>
                 </div>
-                <div class="flex items-center gap-3">
-                    <!-- 桌面版新增活動按鈕 -->
-                    <button id="btn-add-activity-desktop" onclick="openActivityModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg flex items-center shadow-sm transition-colors">
-                        <i data-lucide="plus" class="w-3.5 h-3.5 mr-1"></i>新增活動
-                    </button>
-                    <div class="text-xs text-slate-500 flex items-center space-x-3 flex-shrink-0">
-                        <span class="flex items-center"><span class="w-2.5 h-2.5 rounded bg-indigo-500 inline-block mr-1"></span>確定</span>
-                        <span class="flex items-center"><span class="w-2.5 h-2.5 rounded bg-indigo-500 bg-tentative border border-indigo-400 inline-block mr-1"></span>擬訂</span>
-                    </div>
+                <div class="text-xs text-slate-500 flex items-center space-x-3 flex-shrink-0">
+                    <span class="flex items-center"><span class="w-2.5 h-2.5 rounded bg-indigo-500 inline-block mr-1"></span>確定</span>
+                    <span class="flex items-center"><span class="w-2.5 h-2.5 rounded bg-indigo-500 bg-tentative border border-indigo-400 inline-block mr-1"></span>擬訂</span>
                 </div>
             </div>
         </div>
@@ -328,9 +323,7 @@
     </section>
 </main>
 
-<!-- ══════════════════════════════════════════
-     BillSplitter Main
-══════════════════════════════════════════ -->
+<!-- BillSplitter Main -->
 <main id="app-bill" class="hidden flex-1 w-full mx-auto p-4 sm:p-6" style="max-width:900px">
     <div class="bs-card flex flex-wrap items-center justify-between gap-4 mb-0">
         <div class="min-w-0">
@@ -339,18 +332,15 @@
         </div>
         <div id="bs-project-members" class="flex items-center -space-x-2 overflow-hidden"></div>
     </div>
-
     <div class="bs-card">
         <div class="bs-section-header">
             <h2>單據紀錄</h2>
-            <!-- 桌面版新增單據按鈕 -->
-            <button id="btn-add-bill-desktop" class="bs-btn" onclick="bsOpenBillModal()">+ 新增單據</button>
+            <button class="bs-btn" onclick="bsOpenBillModal()">+ 新增單據</button>
         </div>
         <ul class="bs-bill-list" id="bs-bill-list">
             <li style="text-align:center;color:#64748b;padding:10px">尚無單據資料</li>
         </ul>
     </div>
-
     <div class="bs-card">
         <div class="bs-section-header">
             <h2>帳務結算</h2>
@@ -362,9 +352,7 @@
     </div>
 </main>
 
-<!-- ══════════════════════════════════════════
-     手機底部導覽列（TripPlanner）
-══════════════════════════════════════════ -->
+<!-- 手機底部導覽列 -->
 <nav id="mobile-bottom-nav" class="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-slate-200 shadow-lg items-center justify-around h-16 px-2">
     <button onclick="switchTab('timeline')" id="mob-btn-timeline" class="mob-tab-btn flex flex-col items-center justify-center flex-1 h-full space-y-0.5 text-indigo-600">
         <i data-lucide="calendar" class="w-5 h-5"></i><span class="text-[10px] font-semibold">時程圖</span>
@@ -378,31 +366,14 @@
 </nav>
 
 <!-- ══════════════════════════════════════════
-     手機懸浮 FAB 按鈕
+     統一 FAB 按鈕
 ══════════════════════════════════════════ -->
-<!-- TripPlanner 時程圖 FAB（底部導覽列上方） -->
-<button id="fab-add-activity"
-    class="mobile-fab"
-    style="background:#4f46e5;bottom:84px"
-    onclick="openActivityModal()"
-    title="新增活動">
-    +
+<button id="unified-fab" class="fab-trip" onclick="handleFabClick(event)" aria-label="新增">
+    <span id="fab-label">新增活動</span>
+    <span id="fab-icon">+</span>
 </button>
 
-<!-- BillSplitter FAB（底部導覽列上方，BillSplitter 無底部導覽列，故距底部較近） -->
-<button id="fab-add-bill"
-    class="mobile-fab"
-    style="background:#059669;bottom:24px;display:none"
-    onclick="bsOpenBillModal()"
-    title="新增單據">
-    +
-</button>
-
-<!-- ══════════════════════════════════════════
-     TripPlanner Modals
-══════════════════════════════════════════ -->
-
-<!-- Modal: New Project -->
+<!-- TripPlanner Modals -->
 <div id="new-project-modal" class="modal-outer fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
     <div class="modal-box bg-white rounded-2xl shadow-xl max-w-md w-full p-5 sm:p-6 space-y-4">
         <div class="flex justify-between items-center border-b border-slate-100 pb-3">
@@ -437,7 +408,6 @@
     </div>
 </div>
 
-<!-- Modal: Add/Edit Activity -->
 <div id="activity-modal" class="modal-outer fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-0 sm:p-4">
     <div class="modal-box bg-white rounded-2xl shadow-xl max-w-lg w-full p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
         <div class="flex justify-between items-center border-b border-slate-100 pb-3">
@@ -493,7 +463,6 @@
     </div>
 </div>
 
-<!-- Modal: View Activity Detail -->
 <div id="activity-detail-modal" class="modal-outer fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-0 sm:p-4">
     <div class="modal-box bg-white rounded-2xl shadow-xl max-w-md w-full p-5 sm:p-6 space-y-4">
         <div class="flex justify-between items-start border-b border-slate-100 pb-3">
@@ -531,7 +500,6 @@
     </div>
 </div>
 
-<!-- Modal: Add Person -->
 <div id="add-person-modal" class="modal-outer fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-0 sm:p-4">
     <div class="modal-box bg-white rounded-2xl shadow-xl max-w-sm w-full p-5 sm:p-6 space-y-4">
         <div class="flex justify-between items-center border-b border-slate-100 pb-3">
@@ -556,11 +524,7 @@
     </div>
 </div>
 
-<!-- ══════════════════════════════════════════
-     BillSplitter Modals
-══════════════════════════════════════════ -->
-
-<!-- BS Modal: 新增單據 -->
+<!-- BillSplitter Modals -->
 <div class="bs-modal-overlay" id="bs-bill-modal">
     <div class="bs-modal">
         <div class="bs-modal-header">
@@ -610,7 +574,6 @@
     </div>
 </div>
 
-<!-- BS Modal: 單據明細 -->
 <div class="bs-modal-overlay" id="bs-view-bill-modal">
     <div class="bs-modal">
         <div class="bs-modal-header">
@@ -625,19 +588,13 @@
     </div>
 </div>
 
-<!-- ══════════════════════════════════════════
-     JavaScript
-══════════════════════════════════════════ -->
 <script>
 // ════════════════════════════════════════════════════════════════
 //  資料層
 // ════════════════════════════════════════════════════════════════
-const DEFAULT_PROJECTS = [{
-    id:"p1", name:"東京 5 天 4 夜自由行", startDate:"2026-09-10", endDate:"2026-09-14",
-    personnel:[
-        {id:"u1",name:"Alice",color:"#ef4444"},{id:"u2",name:"Bob",color:"#3b82f6"},
-        {id:"u3",name:"Charlie",color:"#10b981"},{id:"u4",name:"Diana",color:"#f59e0b"}
-    ],
+const DEFAULT_PROJECTS=[{
+    id:"p1",name:"東京 5 天 4 夜自由行",startDate:"2026-09-10",endDate:"2026-09-14",
+    personnel:[{id:"u1",name:"Alice",color:"#ef4444"},{id:"u2",name:"Bob",color:"#3b82f6"},{id:"u3",name:"Charlie",color:"#10b981"},{id:"u4",name:"Diana",color:"#f59e0b"}],
     activities:[
         {id:"a1",name:"抵達特快 N'EX 抵達東京",participants:["u1","u2","u3","u4"],start:"2026-09-10T09:00",end:"2026-09-10T11:30",location:"成田機場 第一航廈",contact:"JR 服務中心 +81 50-2016-1600",isTentative:false,color:"#3b82f6"},
         {id:"a2",name:"飯店 Check-in & 寄放行李",participants:["u1","u2"],start:"2026-09-10T12:30",end:"2026-09-10T13:30",location:"新宿格拉斯麗飯店",contact:"櫃檯 +81 3-6833-1111",isTentative:false,color:"#6366f1"},
@@ -649,66 +606,149 @@ const DEFAULT_PROJECTS = [{
     ]
 }];
 
-let cloudProjects = JSON.parse(JSON.stringify(DEFAULT_PROJECTS));
-let cloudBills    = {};
-let localState    = { currentProjectId:"p1", timelineSelectedDate:"ALL", currentApp:"trip" };
+let cloudProjects=JSON.parse(JSON.stringify(DEFAULT_PROJECTS));
+let cloudBills={};
+let localState={currentProjectId:"p1",timelineSelectedDate:"ALL",currentApp:"trip"};
 
-function loadLocalState(){
-    try{ const s=localStorage.getItem("unified_local"); if(s) Object.assign(localState,JSON.parse(s)); }catch(e){}
-}
-function saveLocalState(){ localStorage.setItem("unified_local",JSON.stringify(localState)); }
+function loadLocalState(){try{const s=localStorage.getItem("unified_local");if(s)Object.assign(localState,JSON.parse(s));}catch(e){}}
+function saveLocalState(){localStorage.setItem("unified_local",JSON.stringify(localState));}
 
-let _currentApp = "trip";
-let _currentTab = "timeline";
+let _currentApp="trip";
+let _currentTab="timeline";
 
 function getCurrentProject(){
     const found=cloudProjects.find(p=>p.id===localState.currentProjectId);
-    if(!found&&cloudProjects.length>0){ localState.currentProjectId=cloudProjects[0].id; saveLocalState(); return cloudProjects[0]; }
+    if(!found&&cloudProjects.length>0){localState.currentProjectId=cloudProjects[0].id;saveLocalState();return cloudProjects[0];}
     return found||cloudProjects[0];
+}
+
+// ════════════════════════════════════════════════════════════════
+//  統一 FAB 邏輯
+//
+//  行為規則：
+//  ┌─────────────┬──────────────────────────────────────────────┐
+//  │ 環境        │ 行為                                         │
+//  ├─────────────┼──────────────────────────────────────────────┤
+//  │ 桌面 hover  │ CSS :hover 展開（純 CSS，不需 JS）           │
+//  │ 桌面 click  │ 直接執行功能                                 │
+//  │ 手機 第1次  │ 展開（顯示文字），不執行功能                 │
+//  │ 手機 第2次  │ 執行功能，收合                               │
+//  │ 手機 點外部 │ 收合，不執行功能                             │
+//  └─────────────┴──────────────────────────────────────────────┘
+//
+//  FAB 顯示規則：
+//  - TripPlanner 時程圖 Tab：顯示，bottom = 底部導覽列上方
+//  - BillSplitter 主畫面：顯示，bottom = 24px（無底部導覽列）
+//  - 其他 Tab（活動清單、人員清單）：隱藏
+// ════════════════════════════════════════════════════════════════
+
+let _fabMobileExpanded = false;  // 手機展開狀態
+
+const fab = document.getElementById("unified-fab");
+const fabLabel = document.getElementById("fab-label");
+
+// 桌面版：hover 展開（純 CSS 處理，JS 只負責 click 執行功能）
+// 在 <style> 中加入 hover 規則（動態注入，避免與手機邏輯衝突）
+const fabHoverStyle = document.createElement("style");
+fabHoverStyle.textContent = `
+    @media (hover: hover) and (pointer: fine) {
+        #unified-fab:hover {
+            width: 148px !important;
+            border-radius: 28px !important;
+        }
+        #unified-fab:hover #fab-label {
+            opacity: 1 !important;
+            transform: translateX(0) !important;
+        }
+        #unified-fab:hover #fab-icon {
+            transform: rotate(0deg) !important;
+        }
+    }
+`;
+document.head.appendChild(fabHoverStyle);
+
+function handleFabClick(e) {
+    e.stopPropagation();
+    const isTouchDevice = window.matchMedia("(hover: none) and (pointer: coarse)").matches;
+
+    if (isTouchDevice) {
+        // 手機邏輯
+        if (!_fabMobileExpanded) {
+            // 第一次：展開
+            _fabMobileExpanded = true;
+            fab.classList.add("fab-expanded");
+        } else {
+            // 第二次：執行功能並收合
+            _fabMobileExpanded = false;
+            fab.classList.remove("fab-expanded");
+            executeFabAction();
+        }
+    } else {
+        // 桌面邏輯：直接執行
+        executeFabAction();
+    }
+}
+
+function executeFabAction() {
+    if (_currentApp === "trip") {
+        openActivityModal();
+    } else {
+        bsOpenBillModal();
+    }
+}
+
+// 手機點擊外部收合 FAB
+document.addEventListener("click", function(e) {
+    if (_fabMobileExpanded && !fab.contains(e.target)) {
+        _fabMobileExpanded = false;
+        fab.classList.remove("fab-expanded");
+    }
+});
+
+function updateFab() {
+    const showFab = (_currentApp === "trip" && _currentTab === "timeline") || _currentApp === "bill";
+
+    // 顯示 / 隱藏
+    fab.style.display = showFab ? "flex" : "none";
+
+    // 收合（切換時重置展開狀態）
+    _fabMobileExpanded = false;
+    fab.classList.remove("fab-expanded");
+
+    if (_currentApp === "trip") {
+        // TripPlanner：紫色，在底部導覽列上方
+        fab.className = fab.className.replace(/fab-trip|fab-bill/g, "").trim();
+        fab.classList.add("fab-trip");
+        fab.classList.add("fab-above-nav");
+        fabLabel.textContent = "新增活動";
+    } else {
+        // BillSplitter：綠色，底部 24px
+        fab.className = fab.className.replace(/fab-trip|fab-bill/g, "").trim();
+        fab.classList.add("fab-bill");
+        fab.classList.remove("fab-above-nav");
+        fabLabel.textContent = "新增單據";
+    }
 }
 
 // ════════════════════════════════════════════════════════════════
 //  Logo 翻轉 / App 切換
 // ════════════════════════════════════════════════════════════════
 function toggleApp(){
-    _currentApp = _currentApp==="trip" ? "bill" : "trip";
-    localState.currentApp = _currentApp;
-    saveLocalState();
+    _currentApp=_currentApp==="trip"?"bill":"trip";
+    localState.currentApp=_currentApp; saveLocalState();
     applyAppUI();
 }
 
 function applyAppUI(){
-    const isTrip = _currentApp==="trip";
+    const isTrip=_currentApp==="trip";
     document.getElementById("logoFlipInner").classList.toggle("flipped",!isTrip);
     document.getElementById("app-trip").classList.toggle("hidden",!isTrip);
     document.getElementById("app-bill").classList.toggle("hidden",isTrip);
-    document.getElementById("desktop-tabs").style.display = isTrip ? "" : "none";
-    document.getElementById("mobile-bottom-nav").style.display = isTrip ? "" : "none";
-    document.title = isTrip ? "TripPlanner" : "BillSplitter";
-    updateFabVisibility();
+    document.getElementById("desktop-tabs").style.display=isTrip?"":"none";
+    document.getElementById("mobile-bottom-nav").style.display=isTrip?"":"none";
+    document.title=isTrip?"TripPlanner":"BillSplitter";
+    updateFab();
     if(!isTrip) bsRenderApp();
-}
-
-// ════════════════════════════════════════════════════════════════
-//  FAB 顯示控制
-//  - TripPlanner 時程圖 Tab：顯示 fab-add-activity
-//  - BillSplitter：顯示 fab-add-bill
-//  - 其他情況：全隱藏
-//  - 桌面版（≥768px）：全隱藏（由 CSS media query 控制）
-// ════════════════════════════════════════════════════════════════
-function updateFabVisibility(){
-    const fabActivity = document.getElementById("fab-add-activity");
-    const fabBill     = document.getElementById("fab-add-bill");
-    // 先全隱藏（JS 層），CSS media query 會在桌面版強制 display:none
-    fabActivity.style.display = "none";
-    fabBill.style.display     = "none";
-
-    if(_currentApp === "trip" && _currentTab === "timeline"){
-        // 讓 CSS media query 決定是否顯示（手機才顯示）
-        fabActivity.style.display = "";
-    } else if(_currentApp === "bill"){
-        fabBill.style.display = "";
-    }
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -724,77 +764,68 @@ function setSyncStatus(s){
 // ════════════════════════════════════════════════════════════════
 //  Firebase 資料層
 // ════════════════════════════════════════════════════════════════
-let _isSaving=false, _unsubscribe=null;
-function getTripDocRef(){ return window._fsDoc(window._db,"tripplanner","shared"); }
-function getBillDocRef(){ return window._fsDoc(window._db,"tripplanner","bills"); }
+let _isSaving=false,_unsubscribe=null;
+function getTripDocRef(){return window._fsDoc(window._db,"tripplanner","shared");}
+function getBillDocRef(){return window._fsDoc(window._db,"tripplanner","bills");}
 
 async function saveData(){
-    if(!window._firebaseReady){
-        localStorage.setItem("trip_projects_bk",JSON.stringify(cloudProjects));
-        localStorage.setItem("trip_bills_bk",JSON.stringify(cloudBills));
-        return;
-    }
+    if(!window._firebaseReady){localStorage.setItem("trip_projects_bk",JSON.stringify(cloudProjects));localStorage.setItem("trip_bills_bk",JSON.stringify(cloudBills));return;}
     try{
-        setSyncStatus("saving"); _isSaving=true;
-        await Promise.all([
-            window._fsSetDoc(getTripDocRef(),{projects:cloudProjects}),
-            window._fsSetDoc(getBillDocRef(),{bills:cloudBills})
-        ]);
+        setSyncStatus("saving");_isSaving=true;
+        await Promise.all([window._fsSetDoc(getTripDocRef(),{projects:cloudProjects}),window._fsSetDoc(getBillDocRef(),{bills:cloudBills})]);
         setSyncStatus("synced");
     }catch(e){
-        console.error("Firestore 儲存失敗",e); setSyncStatus("error");
-        localStorage.setItem("trip_projects_bk",JSON.stringify(cloudProjects));
-        localStorage.setItem("trip_bills_bk",JSON.stringify(cloudBills));
-    }finally{ setTimeout(()=>{_isSaving=false;},800); }
+        console.error("Firestore 儲存失敗",e);setSyncStatus("error");
+        localStorage.setItem("trip_projects_bk",JSON.stringify(cloudProjects));localStorage.setItem("trip_bills_bk",JSON.stringify(cloudBills));
+    }finally{setTimeout(()=>{_isSaving=false;},800);}
 }
 
 async function initCloudSync(){
-    setSyncStatus("connecting"); loadLocalState();
+    setSyncStatus("connecting");loadLocalState();
     _currentApp=localState.currentApp||"trip";
     try{
         const [tripSnap,billSnap]=await Promise.all([window._fsGetDoc(getTripDocRef()),window._fsGetDoc(getBillDocRef())]);
-        if(tripSnap.exists()&&tripSnap.data().projects) cloudProjects=tripSnap.data().projects;
+        if(tripSnap.exists()&&tripSnap.data().projects)cloudProjects=tripSnap.data().projects;
         else await window._fsSetDoc(getTripDocRef(),{projects:cloudProjects});
-        if(billSnap.exists()&&billSnap.data().bills) cloudBills=billSnap.data().bills;
+        if(billSnap.exists()&&billSnap.data().bills)cloudBills=billSnap.data().bills;
         else await window._fsSetDoc(getBillDocRef(),{bills:cloudBills});
         getCurrentProject();
         setSyncStatus("synced");
         document.getElementById("loading-overlay").classList.add("hidden");
-        renderProjectSelector(); loadProject(); applyAppUI(); lucide.createIcons();
-
+        renderProjectSelector();loadProject();applyAppUI();lucide.createIcons();
         _unsubscribe=window._fsOnSnapshot(getTripDocRef(),(snap)=>{
-            if(_isSaving||!snap.exists()||!snap.data().projects) return;
+            if(_isSaving||!snap.exists()||!snap.data().projects)return;
             const viewingId=localState.currentProjectId;
             cloudProjects=snap.data().projects;
             const still=cloudProjects.find(p=>p.id===viewingId);
-            if(!still&&cloudProjects.length>0){ localState.currentProjectId=cloudProjects[0].id; saveLocalState(); showToast("你正在查看的專案已被刪除，已自動切換。"); }
-            renderProjectSelector(); refreshCurrentView(); setSyncStatus("synced");
+            if(!still&&cloudProjects.length>0){localState.currentProjectId=cloudProjects[0].id;saveLocalState();showToast("你正在查看的專案已被刪除，已自動切換。");}
+            renderProjectSelector();refreshCurrentView();setSyncStatus("synced");
         });
         window._fsOnSnapshot(getBillDocRef(),(snap)=>{
-            if(_isSaving||!snap.exists()||!snap.data().bills) return;
+            if(_isSaving||!snap.exists()||!snap.data().bills)return;
             cloudBills=snap.data().bills;
-            if(_currentApp==="bill") bsRenderApp();
+            if(_currentApp==="bill")bsRenderApp();
         });
     }catch(e){
-        console.error("Firestore 初始化失敗",e); setSyncStatus("error");
+        console.error("Firestore 初始化失敗",e);setSyncStatus("error");
         document.getElementById("loading-overlay").classList.add("hidden");
-        try{ const b=localStorage.getItem("trip_projects_bk"); if(b) cloudProjects=JSON.parse(b); }catch(_){}
-        try{ const b=localStorage.getItem("trip_bills_bk"); if(b) cloudBills=JSON.parse(b); }catch(_){}
-        loadLocalState(); getCurrentProject();
-        renderProjectSelector(); loadProject(); applyAppUI(); lucide.createIcons();
+        try{const b=localStorage.getItem("trip_projects_bk");if(b)cloudProjects=JSON.parse(b);}catch(_){}
+        try{const b=localStorage.getItem("trip_bills_bk");if(b)cloudBills=JSON.parse(b);}catch(_){}
+        loadLocalState();getCurrentProject();
+        renderProjectSelector();loadProject();applyAppUI();lucide.createIcons();
     }
 }
 
 document.addEventListener("DOMContentLoaded",()=>{
-    if(window._firebaseReady){ initCloudSync(); }
+    if(window._firebaseReady){initCloudSync();}
     else{
         window.addEventListener("firebase-ready",initCloudSync,{once:true});
         setTimeout(()=>{
             if(!window._firebaseReady){
                 setSyncStatus("error");
                 document.getElementById("loading-overlay").classList.add("hidden");
-                loadLocalState(); _currentApp=localState.currentApp||"trip";
-                renderProjectSelector(); loadProject(); applyAppUI(); lucide.createIcons();
+                loadLocalState();_currentApp=localState.currentApp||"trip";
+                renderProjectSelector();loadProject();applyAppUI();lucide.createIcons();
             }
         },5000);
     }
@@ -806,7 +837,7 @@ document.addEventListener("DOMContentLoaded",()=>{
 function showToast(msg){
     const t=document.createElement("div");
     t.className="fixed bottom-20 sm:bottom-6 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-sm px-4 py-2.5 rounded-xl shadow-lg z-[100] whitespace-nowrap";
-    t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),4000);
+    t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),4000);
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -815,26 +846,25 @@ function showToast(msg){
 function switchTab(tabName){
     _currentTab=tabName;
     document.querySelectorAll(".tab-content").forEach(el=>el.classList.add("hidden"));
-    document.querySelectorAll(".tab-btn").forEach(el=>{ el.classList.remove("text-indigo-600","bg-indigo-50"); el.classList.add("text-slate-600","hover:text-slate-900","hover:bg-slate-100"); });
+    document.querySelectorAll(".tab-btn").forEach(el=>{el.classList.remove("text-indigo-600","bg-indigo-50");el.classList.add("text-slate-600","hover:text-slate-900","hover:bg-slate-100");});
     const ab=document.getElementById(`tab-btn-${tabName}`);
-    if(ab){ ab.classList.remove("text-slate-600","hover:text-slate-900","hover:bg-slate-100"); ab.classList.add("text-indigo-600","bg-indigo-50"); }
-    document.querySelectorAll(".mob-tab-btn").forEach(el=>{ el.classList.remove("text-indigo-600"); el.classList.add("text-slate-400"); });
+    if(ab){ab.classList.remove("text-slate-600","hover:text-slate-900","hover:bg-slate-100");ab.classList.add("text-indigo-600","bg-indigo-50");}
+    document.querySelectorAll(".mob-tab-btn").forEach(el=>{el.classList.remove("text-indigo-600");el.classList.add("text-slate-400");});
     const mb=document.getElementById(`mob-btn-${tabName}`);
-    if(mb){ mb.classList.remove("text-slate-400"); mb.classList.add("text-indigo-600"); }
+    if(mb){mb.classList.remove("text-slate-400");mb.classList.add("text-indigo-600");}
     const at=document.getElementById(`tab-${tabName}`);
-    if(at) at.classList.remove("hidden");
-    if(tabName==="timeline") renderTimeline();
-    if(tabName==="activities") renderActivitiesTable();
-    if(tabName==="personnel") renderPersonnelList();
-    // ✅ 切換 Tab 後更新 FAB 顯示
-    updateFabVisibility();
+    if(at)at.classList.remove("hidden");
+    if(tabName==="timeline")renderTimeline();
+    if(tabName==="activities")renderActivitiesTable();
+    if(tabName==="personnel")renderPersonnelList();
+    updateFab();
 }
 
 function refreshCurrentView(){
-    if(_currentTab==="timeline") renderTimeline();
-    if(_currentTab==="activities") renderActivitiesTable();
-    if(_currentTab==="personnel") renderPersonnelList();
-    const project=getCurrentProject(); if(!project) return;
+    if(_currentTab==="timeline")renderTimeline();
+    if(_currentTab==="activities")renderActivitiesTable();
+    if(_currentTab==="personnel")renderPersonnelList();
+    const project=getCurrentProject();if(!project)return;
     document.getElementById("current-project-title").innerText=project.name;
     document.getElementById("current-project-dates").innerHTML=`<i data-lucide="calendar-days" class="w-3.5 h-3.5 mr-1 flex-shrink-0"></i><span>${project.startDate} 至 ${project.endDate}</span>`;
     document.getElementById("current-project-members").innerHTML=memberAvatars(project.personnel,"w-6 h-6 sm:w-7 sm:h-7");
@@ -848,8 +878,8 @@ function memberAvatars(personnel,sizeClass="w-7 h-7"){
     return personnel.map(m=>`<div class="inline-flex items-center justify-center ${sizeClass} rounded-full text-white font-bold text-xs ring-2 ring-white" style="background-color:${m.color}" title="${m.name}">${m.name.charAt(0).toUpperCase()}</div>`).join("");
 }
 function memberAvatar(person,sizeClass="w-6 h-6"){
-    if(!person) return "";
-    return `<div class="inline-flex items-center justify-center ${sizeClass} rounded-full text-white font-bold text-xs ring-1 ring-white flex-shrink-0" style="background-color:${person.color}">${person.name.charAt(0).toUpperCase()}</div>`;
+    if(!person)return"";
+    return`<div class="inline-flex items-center justify-center ${sizeClass} rounded-full text-white font-bold text-xs ring-1 ring-white flex-shrink-0" style="background-color:${person.color}">${person.name.charAt(0).toUpperCase()}</div>`;
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -858,18 +888,18 @@ function memberAvatar(person,sizeClass="w-6 h-6"){
 function renderProjectSelector(){
     const select=document.getElementById("project-select");
     select.innerHTML=cloudProjects.map(p=>`<option value="${p.id}" ${p.id===localState.currentProjectId?"selected":""}>${p.name}</option>`).join("");
-    select.onchange=(e)=>{ localState.currentProjectId=e.target.value; localState.timelineSelectedDate="ALL"; saveLocalState(); loadProject(); if(_currentApp==="bill") bsRenderApp(); };
+    select.onchange=(e)=>{localState.currentProjectId=e.target.value;localState.timelineSelectedDate="ALL";saveLocalState();loadProject();if(_currentApp==="bill")bsRenderApp();};
 }
 
 function loadProject(){
-    const project=getCurrentProject(); if(!project) return;
+    const project=getCurrentProject();if(!project)return;
     document.getElementById("current-project-title").innerText=project.name;
     document.getElementById("current-project-dates").innerHTML=`<i data-lucide="calendar-days" class="w-3.5 h-3.5 mr-1 flex-shrink-0"></i><span>${project.startDate} 至 ${project.endDate}</span>`;
     document.getElementById("current-project-members").innerHTML=memberAvatars(project.personnel,"w-6 h-6 sm:w-7 sm:h-7");
-    renderTimeline(); renderActivitiesTable(); renderPersonnelList(); lucide.createIcons();
+    renderTimeline();renderActivitiesTable();renderPersonnelList();lucide.createIcons();
 }
 
-function openNewProjectModal(){ openModal("new-project-modal"); }
+function openNewProjectModal(){openModal("new-project-modal");}
 
 function handleCreateProject(e){
     e.preventDefault();
@@ -882,83 +912,75 @@ function handleCreateProject(e){
     const personnel=memberNames.map((mName,idx)=>({id:"u_"+Date.now()+"_"+idx,name:mName,color:colors[idx%colors.length]}));
     const newProj={id:"p_"+Date.now(),name,startDate,endDate,personnel,activities:[]};
     cloudProjects.push(newProj);
-    localState.currentProjectId=newProj.id; localState.timelineSelectedDate="ALL"; saveLocalState();
-    saveData(); renderProjectSelector(); loadProject();
-    closeModal("new-project-modal"); document.getElementById("new-project-form").reset();
+    localState.currentProjectId=newProj.id;localState.timelineSelectedDate="ALL";saveLocalState();
+    saveData();renderProjectSelector();loadProject();
+    closeModal("new-project-modal");document.getElementById("new-project-form").reset();
 }
 
 function handleDeleteCurrentProject(){
-    if(cloudProjects.length<=1){ alert("至少需要保留一個旅遊專案！"); return; }
+    if(cloudProjects.length<=1){alert("至少需要保留一個旅遊專案！");return;}
     const currentProj=getCurrentProject();
-    if(!confirm(`確定要刪除專案「${currentProj.name}」嗎？此操作無法復原。`)) return;
+    if(!confirm(`確定要刪除專案「${currentProj.name}」嗎？此操作無法復原。`))return;
     delete cloudBills[currentProj.id];
     cloudProjects=cloudProjects.filter(p=>p.id!==currentProj.id);
-    localState.currentProjectId=cloudProjects[0].id; localState.timelineSelectedDate="ALL"; saveLocalState();
-    saveData(); renderProjectSelector(); loadProject();
+    localState.currentProjectId=cloudProjects[0].id;localState.timelineSelectedDate="ALL";saveLocalState();
+    saveData();renderProjectSelector();loadProject();
 }
 
 // ════════════════════════════════════════════════════════════════
 //  TripPlanner：時程圖
 // ════════════════════════════════════════════════════════════════
 function renderTimeline(){
-    const project=getCurrentProject(); if(!project) return;
+    const project=getCurrentProject();if(!project)return;
     const filtersContainer=document.getElementById("timeline-date-filters");
-    const dates=[]; let curr=new Date(project.startDate); const stop=new Date(project.endDate);
-    while(curr<=stop){ dates.push(curr.toISOString().split("T")[0]); curr.setDate(curr.getDate()+1); }
-
+    const dates=[];let curr=new Date(project.startDate);const stop=new Date(project.endDate);
+    while(curr<=stop){dates.push(curr.toISOString().split("T")[0]);curr.setDate(curr.getDate()+1);}
     let filterHtml=`<button onclick="setTimelineDate('ALL')" class="px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${localState.timelineSelectedDate==='ALL'?'bg-indigo-600 text-white':'bg-slate-100 text-slate-600 hover:bg-slate-200'}">全部(${dates.length}天)</button>`;
-    dates.forEach(d=>{ const sel=localState.timelineSelectedDate===d; filterHtml+=`<button onclick="setTimelineDate('${d}')" class="px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${sel?'bg-indigo-600 text-white':'bg-slate-100 text-slate-600 hover:bg-slate-200'}">${d.substring(5)}</button>`; });
+    dates.forEach(d=>{const sel=localState.timelineSelectedDate===d;filterHtml+=`<button onclick="setTimelineDate('${d}')" class="px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${sel?'bg-indigo-600 text-white':'bg-slate-100 text-slate-600 hover:bg-slate-200'}">${d.substring(5)}</button>`;});
     filtersContainer.innerHTML=filterHtml;
-
     const displayDates=localState.timelineSelectedDate==="ALL"?dates:[localState.timelineSelectedDate];
     const filteredActivities=project.activities.filter(a=>displayDates.includes(a.start.split("T")[0]));
-
     let minHour=8,maxHour=20;
     if(filteredActivities.length>0){
         let earliest=24,latest=0;
-        filteredActivities.forEach(a=>{ const sh=new Date(a.start).getHours(); const eh=new Date(a.end).getHours()+(new Date(a.end).getMinutes()>0?1:0); if(sh<earliest)earliest=sh; if(eh>latest)latest=eh; });
-        minHour=Math.max(0,Math.min(minHour,earliest)); maxHour=Math.min(24,Math.max(maxHour,latest));
+        filteredActivities.forEach(a=>{const sh=new Date(a.start).getHours();const eh=new Date(a.end).getHours()+(new Date(a.end).getMinutes()>0?1:0);if(sh<earliest)earliest=sh;if(eh>latest)latest=eh;});
+        minHour=Math.max(0,Math.min(minHour,earliest));maxHour=Math.min(24,Math.max(maxHour,latest));
     }
-
     const gridContainer=document.getElementById("timeline-grid");
     let gridHtml=`<div class="grid" style="grid-template-columns:52px repeat(${displayDates.length},minmax(160px,1fr));">`;
     gridHtml+=`<div class="p-2 bg-slate-50 border-b border-r border-slate-200 text-[10px] font-semibold text-slate-500 text-center sticky left-0 z-10">時間</div>`;
-    displayDates.forEach(d=>{ gridHtml+=`<div class="p-2 bg-slate-50 border-b border-r border-slate-200 text-xs font-bold text-slate-700 text-center">${d}</div>`; });
+    displayDates.forEach(d=>{gridHtml+=`<div class="p-2 bg-slate-50 border-b border-r border-slate-200 text-xs font-bold text-slate-700 text-center">${d}</div>`;});
     for(let h=minHour;h<maxHour;h++){
         const hl=`${String(h).padStart(2,'0')}:00`;
         gridHtml+=`<div class="h-14 sm:h-16 p-1 border-b border-r border-slate-100 text-[10px] font-mono text-slate-400 text-center relative bg-slate-50/50 sticky left-0 z-10 flex items-center justify-center">${hl}</div>`;
-        displayDates.forEach(d=>{ gridHtml+=`<div class="h-14 sm:h-16 border-b border-r border-slate-100 relative bg-white" id="cell-${d}-${h}"></div>`; });
+        displayDates.forEach(d=>{gridHtml+=`<div class="h-14 sm:h-16 border-b border-r border-slate-100 relative bg-white" id="cell-${d}-${h}"></div>`;});
     }
-    gridHtml+=`</div>`; gridContainer.innerHTML=gridHtml;
-
-    const isMobile=window.innerWidth<768; const cellH=isMobile?56:64;
-
+    gridHtml+=`</div>`;gridContainer.innerHTML=gridHtml;
+    const isMobile=window.innerWidth<768;const cellH=isMobile?56:64;
     displayDates.forEach(d=>{
         const dayActs=filteredActivities.filter(a=>a.start.split("T")[0]===d)
-            .map(a=>{ const sd=new Date(a.start),ed=new Date(a.end); return{...a,startH:sd.getHours()+sd.getMinutes()/60,endH:ed.getHours()+ed.getMinutes()/60}; })
+            .map(a=>{const sd=new Date(a.start),ed=new Date(a.end);return{...a,startH:sd.getHours()+sd.getMinutes()/60,endH:ed.getHours()+ed.getMinutes()/60};})
             .filter(a=>a.endH>minHour&&a.startH<maxHour)
             .sort((a,b)=>a.startH-b.startH||(b.endH-b.startH)-(a.endH-a.startH));
-        if(dayActs.length===0) return;
-
+        if(dayActs.length===0)return;
         let clusters=[],cc=[],ce=-1;
-        dayActs.forEach(act=>{ if(cc.length===0||act.startH<ce){ cc.push(act); if(act.endH>ce)ce=act.endH; }else{ clusters.push(cc); cc=[act]; ce=act.endH; } });
-        if(cc.length>0) clusters.push(cc);
-
+        dayActs.forEach(act=>{if(cc.length===0||act.startH<ce){cc.push(act);if(act.endH>ce)ce=act.endH;}else{clusters.push(cc);cc=[act];ce=act.endH;}});
+        if(cc.length>0)clusters.push(cc);
         clusters.forEach(cluster=>{
             let tracks=[];
-            cluster.forEach(act=>{ let at=-1; for(let t=0;t<tracks.length;t++){ if(tracks[t]<=act.startH){at=t;tracks[t]=act.endH;break;} } if(at===-1){at=tracks.length;tracks.push(act.endH);} act.trackIndex=at; });
+            cluster.forEach(act=>{let at=-1;for(let t=0;t<tracks.length;t++){if(tracks[t]<=act.startH){at=t;tracks[t]=act.endH;break;}}if(at===-1){at=tracks.length;tracks.push(act.endH);}act.trackIndex=at;});
             const tt=tracks.length;
             cluster.forEach(act=>{
-                const sci=Math.floor(act.startH); const cell=document.getElementById(`cell-${d}-${sci}`); if(!cell) return;
+                const sci=Math.floor(act.startH);const cell=document.getElementById(`cell-${d}-${sci}`);if(!cell)return;
                 const height=Math.max((act.endH-act.startH)*cellH,24);
-                const wp=100/tt; const lp=act.trackIndex*wp;
+                const wp=100/tt;const lp=act.trackIndex*wp;
                 const block=document.createElement("div");
                 block.className=`absolute rounded-md sm:rounded-lg p-1.5 text-white shadow-sm cursor-pointer transition-all hover:scale-[1.02] hover:z-30 hover:shadow-md z-20 overflow-hidden flex flex-col justify-between ${act.isTentative?'bg-tentative border border-white/40':''}`;
-                block.style.top=`${(act.startH-sci)*cellH}px`; block.style.height=`${height}px`;
-                block.style.left=`calc(${lp}% + 2px)`; block.style.width=`calc(${wp}% - 4px)`;
+                block.style.top=`${(act.startH-sci)*cellH}px`;block.style.height=`${height}px`;
+                block.style.left=`calc(${lp}% + 2px)`;block.style.width=`calc(${wp}% - 4px)`;
                 block.style.backgroundColor=act.color||"#3b82f6";
-                block.onclick=(e)=>{ e.stopPropagation(); openActivityDetailModal(act.id); };
-                const partDots=act.participants.map(pid=>{ const p=project.personnel.find(p=>p.id===pid); if(!p) return ''; return `<span class="inline-flex items-center justify-center w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full text-[8px] sm:text-[9px] font-bold text-white ring-1 ring-white/50" style="background-color:${p.color}">${p.name.charAt(0).toUpperCase()}</span>`; }).join("");
+                block.onclick=(e)=>{e.stopPropagation();openActivityDetailModal(act.id);};
+                const partDots=act.participants.map(pid=>{const p=project.personnel.find(p=>p.id===pid);if(!p)return'';return`<span class="inline-flex items-center justify-center w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full text-[8px] sm:text-[9px] font-bold text-white ring-1 ring-white/50" style="background-color:${p.color}">${p.name.charAt(0).toUpperCase()}</span>`;}).join("");
                 block.innerHTML=`<div><div class="font-bold text-[10px] sm:text-xs truncate leading-tight">${act.name}</div><div class="text-[9px] sm:text-[10px] opacity-90 font-mono">${act.start.substring(11,16)}-${act.end.substring(11,16)}</div></div><div class="flex items-center space-x-0.5 mt-0.5">${partDots}</div>`;
                 cell.appendChild(block);
             });
@@ -966,18 +988,18 @@ function renderTimeline(){
     });
 }
 
-function setTimelineDate(d){ localState.timelineSelectedDate=d; saveLocalState(); renderTimeline(); }
+function setTimelineDate(d){localState.timelineSelectedDate=d;saveLocalState();renderTimeline();}
 
 // ════════════════════════════════════════════════════════════════
 //  TripPlanner：活動清單
 // ════════════════════════════════════════════════════════════════
 function renderActivitiesTable(){
-    const project=getCurrentProject(); const tbody=document.getElementById("activities-table-body"); if(!project) return;
-    if(project.activities.length===0){ tbody.innerHTML=`<tr><td colspan="9" class="p-8 text-center text-slate-400 text-sm">目前尚無活動資料，點擊上方按鈕新增。</td></tr>`; return; }
+    const project=getCurrentProject();const tbody=document.getElementById("activities-table-body");if(!project)return;
+    if(project.activities.length===0){tbody.innerHTML=`<tr><td colspan="9" class="p-8 text-center text-slate-400 text-sm">目前尚無活動資料，點擊上方按鈕新增。</td></tr>`;return;}
     tbody.innerHTML=project.activities.map(act=>{
-        const partBadges=act.participants.map(pid=>{ const p=project.personnel.find(p=>p.id===pid); if(!p) return ''; return `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium text-white" style="background-color:${p.color}">${p.name}</span>`; }).join(" ");
+        const partBadges=act.participants.map(pid=>{const p=project.personnel.find(p=>p.id===pid);if(!p)return'';return`<span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium text-white" style="background-color:${p.color}">${p.name}</span>`;}).join(" ");
         const mapsUrl=act.location?`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(act.location)}`:'#';
-        return `<tr class="hover:bg-slate-50 transition-colors">
+        return`<tr class="hover:bg-slate-50 transition-colors">
             <td class="p-3.5 font-semibold text-slate-800" data-label="活動">${act.name}</td>
             <td class="p-3.5" data-label="人員"><div class="flex flex-wrap gap-1">${partBadges}</div></td>
             <td class="p-3.5 font-mono text-xs text-slate-600" data-label="開始">${act.start.replace("T"," ")}</td>
@@ -990,7 +1012,7 @@ function renderActivitiesTable(){
                 <button onclick="openActivityModal('${act.id}')" class="p-1.5 text-slate-500 hover:text-indigo-600 rounded"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
                 <button onclick="deleteActivity('${act.id}')" class="p-1.5 text-slate-500 hover:text-red-600 rounded"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
             </td></tr>`;
-    }).join(""); lucide.createIcons();
+    }).join("");lucide.createIcons();
 }
 
 function openActivityModal(actId=null){
@@ -1002,11 +1024,11 @@ function openActivityModal(actId=null){
         const act=project.activities.find(a=>a.id===actId);
         if(act){
             document.getElementById("activity-modal-title").innerText="編輯活動";
-            document.getElementById("act-id").value=act.id; document.getElementById("act-name").value=act.name;
-            document.getElementById("act-start").value=act.start; document.getElementById("act-end").value=act.end;
-            document.getElementById("act-location").value=act.location||""; document.getElementById("act-contact").value=act.contact||"";
-            document.getElementById("act-tentative").checked=act.isTentative; document.getElementById("act-color").value=act.color||"#3b82f6";
-            document.querySelectorAll(".act-part-cb").forEach(cb=>{ cb.checked=act.participants.includes(cb.value); });
+            document.getElementById("act-id").value=act.id;document.getElementById("act-name").value=act.name;
+            document.getElementById("act-start").value=act.start;document.getElementById("act-end").value=act.end;
+            document.getElementById("act-location").value=act.location||"";document.getElementById("act-contact").value=act.contact||"";
+            document.getElementById("act-tentative").checked=act.isTentative;document.getElementById("act-color").value=act.color||"#3b82f6";
+            document.querySelectorAll(".act-part-cb").forEach(cb=>{cb.checked=act.participants.includes(cb.value);});
         }
     }else{
         document.getElementById("activity-modal-title").innerText="新增活動";
@@ -1018,52 +1040,52 @@ function openActivityModal(actId=null){
 }
 
 function handleSaveActivity(e){
-    e.preventDefault(); const project=getCurrentProject(); const id=document.getElementById("act-id").value;
+    e.preventDefault();const project=getCurrentProject();const id=document.getElementById("act-id").value;
     const sp=Array.from(document.querySelectorAll(".act-part-cb:checked")).map(cb=>cb.value);
     const ad={id:id||"a_"+Date.now(),name:document.getElementById("act-name").value,start:document.getElementById("act-start").value,end:document.getElementById("act-end").value,participants:sp,location:document.getElementById("act-location").value,contact:document.getElementById("act-contact").value,isTentative:document.getElementById("act-tentative").checked,color:document.getElementById("act-color").value};
-    if(id){ const idx=project.activities.findIndex(a=>a.id===id); if(idx!==-1) project.activities[idx]=ad; }
+    if(id){const idx=project.activities.findIndex(a=>a.id===id);if(idx!==-1)project.activities[idx]=ad;}
     else project.activities.push(ad);
-    saveData(); closeModal("activity-modal"); renderTimeline(); renderActivitiesTable();
+    saveData();closeModal("activity-modal");renderTimeline();renderActivitiesTable();
 }
 
 function deleteActivity(actId){
-    if(!confirm("確定要刪除此活動嗎？")) return;
-    const project=getCurrentProject(); project.activities=project.activities.filter(a=>a.id!==actId);
-    saveData(); renderTimeline(); renderActivitiesTable();
+    if(!confirm("確定要刪除此活動嗎？"))return;
+    const project=getCurrentProject();project.activities=project.activities.filter(a=>a.id!==actId);
+    saveData();renderTimeline();renderActivitiesTable();
 }
 
 function openActivityDetailModal(actId){
-    const project=getCurrentProject(); const act=project.activities.find(a=>a.id===actId); if(!act) return;
+    const project=getCurrentProject();const act=project.activities.find(a=>a.id===actId);if(!act)return;
     document.getElementById("detail-title").innerText=act.name;
     document.getElementById("detail-time").innerText=`${act.start.replace("T"," ")} ~ ${act.end.replace("T"," ")}`;
     const locEl=document.getElementById("detail-location");
-    if(act.location) locEl.innerHTML=`<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(act.location)}" target="_blank" class="text-indigo-600 hover:underline flex items-center">${act.location} <i data-lucide="external-link" class="w-3 h-3 ml-1"></i></a>`;
+    if(act.location)locEl.innerHTML=`<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(act.location)}" target="_blank" class="text-indigo-600 hover:underline flex items-center">${act.location} <i data-lucide="external-link" class="w-3 h-3 ml-1"></i></a>`;
     else locEl.innerText="未設定";
     document.getElementById("detail-contact").innerText=act.contact||"無";
     const tagEl=document.getElementById("detail-tentative-tag");
     act.isTentative?tagEl.classList.remove("hidden"):tagEl.classList.add("hidden");
     const partsEl=document.getElementById("detail-participants");
-    partsEl.innerHTML=act.participants.map(pid=>{ const p=project.personnel.find(x=>x.id===pid); if(!p) return ''; return `<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold text-white" style="background-color:${p.color}"><span class="w-1.5 h-1.5 rounded-full bg-white mr-1.5"></span>${p.name}</span>`; }).join("");
-    document.getElementById("detail-edit-btn").onclick=()=>{ closeModal("activity-detail-modal"); openActivityModal(act.id); };
-    openModal("activity-detail-modal"); lucide.createIcons();
+    partsEl.innerHTML=act.participants.map(pid=>{const p=project.personnel.find(x=>x.id===pid);if(!p)return'';return`<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold text-white" style="background-color:${p.color}"><span class="w-1.5 h-1.5 rounded-full bg-white mr-1.5"></span>${p.name}</span>`;}).join("");
+    document.getElementById("detail-edit-btn").onclick=()=>{closeModal("activity-detail-modal");openActivityModal(act.id);};
+    openModal("activity-detail-modal");lucide.createIcons();
 }
 
 // ════════════════════════════════════════════════════════════════
 //  TripPlanner：人員管理
 // ════════════════════════════════════════════════════════════════
 function isMemberInBills(personName){
-    const project=getCurrentProject(); if(!project) return false;
-    return (cloudBills[project.id]||[]).some(b=>b.payer===personName||Object.keys(b.shares||{}).includes(personName));
+    const project=getCurrentProject();if(!project)return false;
+    return(cloudBills[project.id]||[]).some(b=>b.payer===personName||Object.keys(b.shares||{}).includes(personName));
 }
 
 function renderPersonnelList(){
-    const project=getCurrentProject(); const container=document.getElementById("personnel-list-container"); if(!project) return;
+    const project=getCurrentProject();const container=document.getElementById("personnel-list-container");if(!project)return;
     container.innerHTML=project.personnel.map(p=>{
         const inBills=isMemberInBills(p.name);
         const deleteBtn=inBills
             ?`<button disabled title="此成員已有分帳單據，無法刪除" class="p-1.5 text-slate-200 rounded-lg cursor-not-allowed"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`
             :`<button onclick="deletePerson('${p.id}')" class="p-1.5 text-slate-400 hover:text-red-600 rounded-lg"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`;
-        return `<div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+        return`<div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
             <div class="flex items-center space-x-3">
                 <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-inner flex-shrink-0" style="background-color:${p.color}">${p.name.charAt(0).toUpperCase()}</div>
                 <div>
@@ -1077,35 +1099,35 @@ function renderPersonnelList(){
                 ${deleteBtn}
             </div>
         </div>`;
-    }).join(""); lucide.createIcons();
+    }).join("");lucide.createIcons();
 }
 
 function handleAddPerson(e){
-    e.preventDefault(); const project=getCurrentProject();
+    e.preventDefault();const project=getCurrentProject();
     const name=document.getElementById("person-name-input").value;
     const color=document.getElementById("person-color-input").value;
     project.personnel.push({id:"u_"+Date.now(),name,color});
-    saveData(); closeModal("add-person-modal"); document.getElementById("person-name-input").value=""; loadProject();
+    saveData();closeModal("add-person-modal");document.getElementById("person-name-input").value="";loadProject();
 }
 
 function updatePersonColor(personId,newColor){
-    const project=getCurrentProject(); const person=project.personnel.find(p=>p.id===personId);
-    if(person){ person.color=newColor; saveData(); loadProject(); }
+    const project=getCurrentProject();const person=project.personnel.find(p=>p.id===personId);
+    if(person){person.color=newColor;saveData();loadProject();}
 }
 
 function deletePerson(personId){
     const project=getCurrentProject();
-    if(project.personnel.length<=1){ alert("專案至少需要保留一名成員！"); return; }
+    if(project.personnel.length<=1){alert("專案至少需要保留一名成員！");return;}
     const person=project.personnel.find(p=>p.id===personId);
-    if(person&&isMemberInBills(person.name)){ alert("此成員已有分帳單據紀錄，無法刪除。"); return; }
-    if(!confirm("確定刪除此成員？（活動列表中的相應參與標籤也會同步更新）")) return;
+    if(person&&isMemberInBills(person.name)){alert("此成員已有分帳單據紀錄，無法刪除。");return;}
+    if(!confirm("確定刪除此成員？（活動列表中的相應參與標籤也會同步更新）"))return;
     project.personnel=project.personnel.filter(p=>p.id!==personId);
-    project.activities.forEach(a=>{ a.participants=a.participants.filter(pid=>pid!==personId); });
-    saveData(); loadProject();
+    project.activities.forEach(a=>{a.participants=a.participants.filter(pid=>pid!==personId);});
+    saveData();loadProject();
 }
 
-function openModal(id){ document.getElementById(id).classList.remove("hidden"); }
-function closeModal(id){ document.getElementById(id).classList.add("hidden"); }
+function openModal(id){document.getElementById(id).classList.remove("hidden");}
+function closeModal(id){document.getElementById(id).classList.add("hidden");}
 
 // ════════════════════════════════════════════════════════════════
 //  BillSplitter
@@ -1113,15 +1135,15 @@ function closeModal(id){ document.getElementById(id).classList.add("hidden"); }
 let bsCurrentBillMode="equal";
 let bsActiveViewBillId=null;
 
-function bsGetBills(){ return cloudBills[localState.currentProjectId]||[]; }
-function bsSetBills(bills){ cloudBills[localState.currentProjectId]=bills; }
+function bsGetBills(){return cloudBills[localState.currentProjectId]||[];}
+function bsSetBills(bills){cloudBills[localState.currentProjectId]=bills;}
 
 function bsRenderApp(){
     const project=getCurrentProject();
     document.getElementById("bs-project-title").innerText=project?project.name:"請先建立或選擇專案";
     document.getElementById("bs-project-members").innerHTML=project?memberAvatars(project.personnel,"w-6 h-6 sm:w-7 sm:h-7"):"";
     const billListEl=document.getElementById("bs-bill-list");
-    if(!project){ billListEl.innerHTML='<li style="text-align:center;color:#64748b;padding:10px">尚無專案</li>'; bsRenderSettlement([]); return; }
+    if(!project){billListEl.innerHTML='<li style="text-align:center;color:#64748b;padding:10px">尚無專案</li>';bsRenderSettlement([]);return;}
     const bills=bsGetBills();
     if(bills.length===0){
         billListEl.innerHTML='<li style="text-align:center;color:#64748b;padding:10px">尚無單據資料</li>';
@@ -1129,7 +1151,7 @@ function bsRenderApp(){
         billListEl.innerHTML=bills.map(b=>{
             const payerPerson=project.personnel.find(p=>p.name===b.payer);
             const payerAvatar=payerPerson?memberAvatar(payerPerson,"w-5 h-5"):"";
-            return `<li class="bs-bill-item" onclick="bsViewBill('${b.id}')">
+            return`<li class="bs-bill-item" onclick="bsViewBill('${b.id}')">
                 <div>
                     <strong>${bsEscapeHtml(b.title)}</strong>
                     <div style="font-size:.8rem;color:#64748b;display:flex;align-items:center;gap:5px;margin-top:3px">
@@ -1144,7 +1166,7 @@ function bsRenderApp(){
 }
 
 function bsOpenBillModal(billToEdit=null){
-    const project=getCurrentProject(); if(!project) return alert("請先建立專案");
+    const project=getCurrentProject();if(!project)return alert("請先建立專案");
     const payerSelect=document.getElementById("bs-bill-payer");
     payerSelect.innerHTML=project.personnel.map(m=>`<option value="${bsEscapeHtml(m.name)}">${bsEscapeHtml(m.name)}</option>`).join("");
     if(billToEdit){
@@ -1154,7 +1176,7 @@ function bsOpenBillModal(billToEdit=null){
         payerSelect.value=billToEdit.payer;
         document.getElementById("bs-btn-delete-bill").style.display="block";
         bsSetBillMode(billToEdit.mode);
-        if(billToEdit.mode==="equal"){ document.getElementById("bs-bill-total-amount").value=billToEdit.amount; bsRenderEqualDebtors(billToEdit.debtorDeductions); }
+        if(billToEdit.mode==="equal"){document.getElementById("bs-bill-total-amount").value=billToEdit.amount;bsRenderEqualDebtors(billToEdit.debtorDeductions);}
         else bsRenderCustomDebtors(billToEdit.customDebts);
     }else{
         document.getElementById("bs-bill-modal-title").textContent="新增單據";
@@ -1162,7 +1184,7 @@ function bsOpenBillModal(billToEdit=null){
         document.getElementById("bs-bill-title").value="";
         document.getElementById("bs-bill-total-amount").value="";
         document.getElementById("bs-btn-delete-bill").style.display="none";
-        bsSetBillMode("equal"); bsRenderEqualDebtors({}); bsRenderCustomDebtors({});
+        bsSetBillMode("equal");bsRenderEqualDebtors({});bsRenderCustomDebtors({});
     }
     document.getElementById("bs-bill-modal").classList.add("active");
 }
@@ -1175,24 +1197,22 @@ function bsSetBillMode(mode){
     document.getElementById("bs-custom-mode-area").style.display=mode==="custom"?"block":"none";
 }
 
-function bsToggleSelectAll(checked){
-    document.querySelectorAll(".bs-eq-check").forEach(cb=>{ cb.checked=checked; });
-}
+function bsToggleSelectAll(checked){document.querySelectorAll(".bs-eq-check").forEach(cb=>{cb.checked=checked;});}
 
 function bsSyncSelectAllState(){
     const all=document.querySelectorAll(".bs-eq-check");
     const checked=document.querySelectorAll(".bs-eq-check:checked");
-    const cb=document.getElementById("bs-select-all-cb"); if(!cb) return;
+    const cb=document.getElementById("bs-select-all-cb");if(!cb)return;
     cb.indeterminate=checked.length>0&&checked.length<all.length;
     cb.checked=checked.length===all.length&&all.length>0;
 }
 
 function bsRenderEqualDebtors(deductions={}){
-    const project=getCurrentProject(); if(!project) return;
+    const project=getCurrentProject();if(!project)return;
     const container=document.getElementById("bs-equal-debtors-list");
     container.innerHTML=project.personnel.map(p=>{
         const m=p.name;
-        return `<div class="bs-dynamic-row">
+        return`<div class="bs-dynamic-row">
             <label style="flex:1;display:flex;align-items:center;gap:6px">
                 <input type="checkbox" class="bs-eq-check" value="${bsEscapeHtml(m)}" ${deductions[m]!==undefined?'checked':''} onchange="bsSyncSelectAllState()" style="width:16px;height:16px">
                 ${memberAvatar(p,"w-5 h-5")}
@@ -1206,11 +1226,11 @@ function bsRenderEqualDebtors(deductions={}){
 }
 
 function bsRenderCustomDebtors(customDebts={}){
-    const project=getCurrentProject(); if(!project) return;
+    const project=getCurrentProject();if(!project)return;
     const container=document.getElementById("bs-custom-debtors-list");
     container.innerHTML=project.personnel.map(p=>{
         const m=p.name;
-        return `<div class="bs-dynamic-row">
+        return`<div class="bs-dynamic-row">
             <span style="flex:1;display:flex;align-items:center;gap:6px">${memberAvatar(p,"w-5 h-5")}${bsEscapeHtml(m)}</span>
             <input type="number" class="bs-form-control bs-custom-debt" data-member="${bsEscapeHtml(m)}" value="${customDebts[m]||0}" style="width:110px"> 元
         </div>`;
@@ -1221,40 +1241,40 @@ function bsSaveBill(){
     const title=document.getElementById("bs-bill-title").value.trim();
     const payer=document.getElementById("bs-bill-payer").value;
     const editingId=document.getElementById("bs-editing-bill-id").value;
-    if(!title) return alert("請輸入單據名稱");
+    if(!title)return alert("請輸入單據名稱");
     let billData={id:editingId||"bill_"+Date.now(),title,payer,mode:bsCurrentBillMode,shares:{}};
     if(bsCurrentBillMode==="equal"){
         const total=parseFloat(document.getElementById("bs-bill-total-amount").value);
-        if(isNaN(total)||total<=0) return alert("請輸入有效總金額");
+        if(isNaN(total)||total<=0)return alert("請輸入有效總金額");
         const checkboxes=document.querySelectorAll(".bs-eq-check:checked");
         const selectedMembers=Array.from(checkboxes).map(c=>c.value);
-        if(selectedMembers.length===0) return alert("請至少選擇一位欠款人");
+        if(selectedMembers.length===0)return alert("請至少選擇一位欠款人");
         let deductions={},sumDeduction=0;
-        document.querySelectorAll(".bs-eq-deduct").forEach(input=>{ const m=input.dataset.member; if(selectedMembers.includes(m)){ const val=parseFloat(input.value)||0; deductions[m]=val; sumDeduction+=val; } });
-        if(sumDeduction>total) return alert("扣除額總和不可大於總金額");
-        const totalCents=bsToCents(total); const deductionCents={}; let sumDC=0;
-        selectedMembers.forEach(m=>{ deductionCents[m]=bsToCents(deductions[m]||0); sumDC+=deductionCents[m]; });
-        if(sumDC>totalCents) return alert("扣除額總和不可大於總金額");
-        const remainCents=totalCents-sumDC; const baseShare=Math.floor(remainCents/selectedMembers.length); let remainder=remainCents%selectedMembers.length;
-        selectedMembers.forEach(m=>{ const extra=remainder>0?1:0; if(remainder>0)remainder--; billData.shares[m]=bsCentsToAmount(deductionCents[m]+baseShare+extra); });
-        billData.amount=bsCentsToAmount(totalCents); billData.debtorDeductions=deductions;
+        document.querySelectorAll(".bs-eq-deduct").forEach(input=>{const m=input.dataset.member;if(selectedMembers.includes(m)){const val=parseFloat(input.value)||0;deductions[m]=val;sumDeduction+=val;}});
+        if(sumDeduction>total)return alert("扣除額總和不可大於總金額");
+        const totalCents=bsToCents(total);const deductionCents={};let sumDC=0;
+        selectedMembers.forEach(m=>{deductionCents[m]=bsToCents(deductions[m]||0);sumDC+=deductionCents[m];});
+        if(sumDC>totalCents)return alert("扣除額總和不可大於總金額");
+        const remainCents=totalCents-sumDC;const baseShare=Math.floor(remainCents/selectedMembers.length);let remainder=remainCents%selectedMembers.length;
+        selectedMembers.forEach(m=>{const extra=remainder>0?1:0;if(remainder>0)remainder--;billData.shares[m]=bsCentsToAmount(deductionCents[m]+baseShare+extra);});
+        billData.amount=bsCentsToAmount(totalCents);billData.debtorDeductions=deductions;
     }else{
         let total=0,debts={};
-        document.querySelectorAll(".bs-custom-debt").forEach(input=>{ const m=input.dataset.member; const val=parseFloat(input.value)||0; if(val>0){debts[m]=val;total+=val;} });
-        if(total<=0) return alert("債務總額必須大於 0");
-        billData.amount=total; billData.shares=debts; billData.customDebts=debts;
+        document.querySelectorAll(".bs-custom-debt").forEach(input=>{const m=input.dataset.member;const val=parseFloat(input.value)||0;if(val>0){debts[m]=val;total+=val;}});
+        if(total<=0)return alert("債務總額必須大於 0");
+        billData.amount=total;billData.shares=debts;billData.customDebts=debts;
     }
     const bills=bsGetBills();
-    if(editingId){ const idx=bills.findIndex(b=>b.id===editingId); bills[idx]=billData; }
+    if(editingId){const idx=bills.findIndex(b=>b.id===editingId);bills[idx]=billData;}
     else bills.push(billData);
-    bsSetBills(bills); saveData();
-    bsCloseModal("bs-bill-modal"); bsCloseModal("bs-view-bill-modal"); bsRenderApp();
+    bsSetBills(bills);saveData();
+    bsCloseModal("bs-bill-modal");bsCloseModal("bs-view-bill-modal");bsRenderApp();
 }
 
 function bsViewBill(id){
     bsActiveViewBillId=id;
     const project=getCurrentProject();
-    const bill=bsGetBills().find(b=>b.id===id); if(!bill) return;
+    const bill=bsGetBills().find(b=>b.id===id);if(!bill)return;
     document.getElementById("bs-view-bill-title").textContent=bill.title;
     const payerPerson=project?project.personnel.find(p=>p.name===bill.payer):null;
     const payerAvatar=payerPerson?memberAvatar(payerPerson,"w-5 h-5"):"";
@@ -1275,90 +1295,92 @@ function bsViewBill(id){
 
 function bsOpenEditBillModal(){
     const bill=bsGetBills().find(b=>b.id===bsActiveViewBillId);
-    bsCloseModal("bs-view-bill-modal"); bsOpenBillModal(bill);
+    bsCloseModal("bs-view-bill-modal");bsOpenBillModal(bill);
 }
 
 function bsDeleteCurrentBill(){
-    if(!confirm("確定要刪除這筆單據嗎？")) return;
+    if(!confirm("確定要刪除這筆單據嗎？"))return;
     const editingId=document.getElementById("bs-editing-bill-id").value;
     const bills=bsGetBills().filter(b=>b.id!==bsActiveViewBillId&&b.id!==editingId);
-    bsSetBills(bills); saveData();
-    bsCloseModal("bs-view-bill-modal"); bsCloseModal("bs-bill-modal"); bsRenderApp();
+    bsSetBills(bills);saveData();
+    bsCloseModal("bs-view-bill-modal");bsCloseModal("bs-bill-modal");bsRenderApp();
 }
 
-function bsCloseModal(id){ document.getElementById(id).classList.remove("active"); }
+function bsCloseModal(id){document.getElementById(id).classList.remove("active");}
 
 function bsCalculateAndRenderSettlement(){
-    const project=getCurrentProject(); const bills=bsGetBills();
-    if(!project||bills.length===0){ bsRenderSettlement([]); return; }
-    const balances={}; project.personnel.forEach(p=>balances[p.name]=0);
+    const project=getCurrentProject();const bills=bsGetBills();
+    if(!project||bills.length===0){bsRenderSettlement([]);return;}
+    const balances={};project.personnel.forEach(p=>balances[p.name]=0);
     bills.forEach(bill=>{
-        const payer=bill.payer; const ba=bsToCents(bill.amount);
-        if(balances[payer]===undefined) balances[payer]=0; balances[payer]+=ba;
+        const payer=bill.payer;const ba=bsToCents(bill.amount);
+        if(balances[payer]===undefined)balances[payer]=0;balances[payer]+=ba;
         for(const [debtor,amt] of Object.entries(bill.shares||{})){
-            if(balances[debtor]===undefined) balances[debtor]=0; balances[debtor]-=bsToCents(amt);
+            if(balances[debtor]===undefined)balances[debtor]=0;balances[debtor]-=bsToCents(amt);
         }
     });
     const totalBalance=Object.values(balances).reduce((s,v)=>s+v,0);
-    if(totalBalance!==0){ bsRenderSettlement([]); return; }
+    if(totalBalance!==0){bsRenderSettlement([]);return;}
     bsRenderSettlement(bsSolveMinimumTransactions(balances));
 }
 
-function bsToCents(amount){ const v=Number(amount); if(!Number.isFinite(v)) return 0; return Math.round(v*100); }
-function bsCentsToAmount(cents){ return cents/100; }
+function bsToCents(amount){const v=Number(amount);if(!Number.isFinite(v))return 0;return Math.round(v*100);}
+function bsCentsToAmount(cents){return cents/100;}
 
 function bsSolveMinimumTransactions(balances){
     const entries=Object.entries(balances).map(([member,cents])=>({member,cents})).filter(x=>x.cents!==0);
-    if(entries.length<=1) return [];
+    if(entries.length<=1)return[];
     const best={count:Infinity,transactions:[]};
-    const working=entries.map(x=>x.cents); const names=entries.map(x=>x.member);
+    const working=entries.map(x=>x.cents);const names=entries.map(x=>x.member);
     function dfs(start,transactions){
-        while(start<working.length&&working[start]===0) start++;
-        if(start===working.length){ if(transactions.length<best.count){best.count=transactions.length;best.transactions=transactions.map(t=>({...t}));} return; }
-        if(transactions.length>=best.count) return;
-        const seen=new Set(); const candidates=[];
+        while(start<working.length&&working[start]===0)start++;
+        if(start===working.length){if(transactions.length<best.count){best.count=transactions.length;best.transactions=transactions.map(t=>({...t}));}return;}
+        if(transactions.length>=best.count)return;
+        const seen=new Set();const candidates=[];
         for(let j=start+1;j<working.length;j++){
-            if(working[j]===0) continue;
+            if(working[j]===0)continue;
             if((working[start]<0&&working[j]>0)||(working[start]>0&&working[j]<0)){
-                const key=String(working[j]); if(!seen.has(key)){seen.add(key);candidates.push(j);}
+                const key=String(working[j]);if(!seen.has(key)){seen.add(key);candidates.push(j);}
             }
         }
-        candidates.sort((a,b)=>{ const ae=Math.abs(working[start]+working[a])===0?0:1; const be=Math.abs(working[start]+working[b])===0?0:1; if(ae!==be)return ae-be; return Math.abs(working[start]+working[a])-Math.abs(working[start]+working[b]); });
+        candidates.sort((a,b)=>{const ae=Math.abs(working[start]+working[a])===0?0:1;const be=Math.abs(working[start]+working[b])===0?0:1;if(ae!==be)return ae-be;return Math.abs(working[start]+working[a])-Math.abs(working[start]+working[b]);});
         for(const j of candidates){
-            const amount=Math.min(Math.abs(working[start]),Math.abs(working[j])); if(amount<=0) continue;
-            const from=working[start]<0?names[start]:names[j]; const to=working[start]<0?names[j]:names[start];
-            const os=working[start]; const oj=working[j];
-            working[start]=os<0?os+amount:os-amount; working[j]=oj<0?oj+amount:oj-amount;
+            const amount=Math.min(Math.abs(working[start]),Math.abs(working[j]));if(amount<=0)continue;
+            const from=working[start]<0?names[start]:names[j];const to=working[start]<0?names[j]:names[start];
+            const os=working[start];const oj=working[j];
+            working[start]=os<0?os+amount:os-amount;working[j]=oj<0?oj+amount:oj-amount;
             transactions.push({from,to,amount:bsCentsToAmount(amount)});
-            const ns=working[start]===0?start+1:start; dfs(ns,transactions);
-            transactions.pop(); working[start]=os; working[j]=oj;
-            if(Math.abs(working[start])===0) break;
+            const ns=working[start]===0?start+1:start;dfs(ns,transactions);
+            transactions.pop();working[start]=os;working[j]=oj;
+            if(Math.abs(working[start])===0)break;
         }
     }
-    dfs(0,[]); return best.transactions;
+    dfs(0,[]);return best.transactions;
 }
 
 function bsRenderSettlement(transactions){
     const container=document.getElementById("bs-settlement-list");
-    if(transactions.length===0){ container.innerHTML='<div style="text-align:center;color:#64748b">帳務已平衡，無需額外交易！</div>'; return; }
+    if(transactions.length===0){container.innerHTML='<div style="text-align:center;color:#64748b">帳務已平衡，無需額外交易！</div>';return;}
     const project=getCurrentProject();
     container.innerHTML=transactions.map(t=>{
         const fp=project?project.personnel.find(p=>p.name===t.from):null;
         const tp=project?project.personnel.find(p=>p.name===t.to):null;
-        const fa=fp?memberAvatar(fp,"w-5 h-5"):""; const ta=tp?memberAvatar(tp,"w-5 h-5"):"";
-        return `<div class="bs-settlement-item">
+        const fa=fp?memberAvatar(fp,"w-5 h-5"):"";const ta=tp?memberAvatar(tp,"w-5 h-5"):"";
+        return`<div class="bs-settlement-item">
             <span style="display:flex;align-items:center;gap:5px">${fa}<strong>${bsEscapeHtml(t.from)}</strong><span style="margin:0 4px">應給予</span>${ta}<strong>${bsEscapeHtml(t.to)}</strong></span>
             <strong style="color:var(--bs-primary)">${Number(t.amount).toFixed(2)} 元</strong>
         </div>`;
     }).join("");
 }
 
-function bsEscapeHtml(str){ return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
+function bsEscapeHtml(str){return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
 
 document.addEventListener('keydown',(e)=>{
     if(e.key==='Escape'){
         ['bs-bill-modal','bs-view-bill-modal'].forEach(bsCloseModal);
         ['new-project-modal','activity-modal','activity-detail-modal','add-person-modal'].forEach(closeModal);
+        // ESC 也收合 FAB
+        if(_fabMobileExpanded){_fabMobileExpanded=false;fab.classList.remove("fab-expanded");}
     }
 });
 </script>
